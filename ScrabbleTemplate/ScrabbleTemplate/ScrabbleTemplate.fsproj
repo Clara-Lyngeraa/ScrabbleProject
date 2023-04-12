@@ -9,6 +9,8 @@
 
     <Content Include="Dictionaries\English.txt" />
     <Compile Include="Program.fs" />
+    <Compile Include="Dictionary.fsi" />
+    <Compile Include="Dictionary.fs" />
   </ItemGroup>
 
   <ItemGroup>
