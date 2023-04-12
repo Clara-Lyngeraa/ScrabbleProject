@@ -3,9 +3,22 @@
 module internal Eval
 
     open StateMonad
+    
+    
+    let hello = [('H', 4);('E', 1); ('L', 1); ('L', 1); ('O', 1)]
+    let state = mkState [("x", 5); ("y", 42)] hello ["_pos_"; "_result_"]
+    let emptyState = mkState [] [] []
 
-    let add a b = failwith "Not implemented"      
-    let div a b = failwith "Not implemented"      
+    let add a b =
+         a >>= fun x ->
+         b >>= fun y ->
+             ret (x+y)     
+    
+    let div a b =
+         a >>= fun x ->
+         b >>= fun y ->
+             if y <> 0 then ret (x / y) else fail DivisionByZero
+
 
     type aExp =
         | N of int
@@ -18,6 +31,7 @@ module internal Eval
         | Div of aExp * aExp
         | Mod of aExp * aExp
         | CharToInt of cExp
+     
 
     and cExp =
        | C  of char  (* Character value *)
@@ -38,6 +52,10 @@ module internal Eval
 
        | IsVowel of cExp      (* check for vowel *)
        | IsConsonant of cExp  (* check for constant *)
+       | IsLetter of cExp
+       | IsDigit of cExp
+    
+     
 
     let (.+.) a b = Add (a, b)
     let (.-.) a b = Sub (a, b)
@@ -57,11 +75,73 @@ module internal Eval
     let (.>=.) a b = ~~(a .<. b)                (* numeric greater than or equal to *)
     let (.>.) a b = ~~(a .=. b) .&&. (a .>=. b) (* numeric greater than *)    
 
-    let arithEval a : SM<int> = failwith "Not implemented"      
+   (* let arithEval a : SM<int> = failwith "Not implemented"      
 
     let charEval c : SM<char> = failwith "Not implemented"      
 
-    let boolEval b : SM<bool> = failwith "Not implemented"
+    let boolEval b : SM<bool> = failwith "Not implemented"*)
+     
+    let isConsonant c = 
+        match System.Char.ToUpper c with
+        |'A'|'E'|'I'|'O'|'U'|'Y' -> false
+        | _ -> true
+    
+    let rec arithEval a : SM<int> =
+        match a with
+         | N n -> ret n
+         | V v -> lookup v
+         | WL -> wordLength 
+         | PV i -> arithEval i >>= pointValue
+         | Add (x, y) ->  add (arithEval x) (arithEval y)
+         | Sub (x, y) -> arithEval x >>= fun n ->
+                         arithEval y >>= fun m ->
+                                       ret (n-m)
+                                       //((.-.) x y)
+         | Mul (x, y) -> arithEval x >>= fun n ->
+                         arithEval y >>= fun m ->
+                                        ret (n*m)
+                                        //((.*.) x y)
+         | Div (x, y) -> div (arithEval x) (arithEval y)
+         | Mod (x, y) -> arithEval x >>= fun n ->
+                         arithEval y >>= fun m ->
+                                        if m > 0 then ret (n%m)
+                                        else fail DivisionByZero
+                                        //((.%.) x y)
+         | CharToInt c -> charEval c >>= fun k ->
+                                ret ((int) k)
+    and charEval c : SM<char> =
+        match c with
+        | C c -> ret c
+        | CV a -> arithEval a >>= characterValue 
+        | ToUpper c -> charEval c >>= fun k ->
+                                    ret (System.Char.ToUpper k)//of cExp
+        | ToLower c -> charEval c >>= fun k ->
+                                    ret (System.Char.ToLower k)//of cExp 
+        | IntToChar a -> arithEval a >>= fun x ->
+                                       ret ((char) x) //of aExp
+    and  boolEval b : SM<bool> =
+        match b with            
+        | TT -> ret (true)                  (* true *)
+        | FF -> ret (false)                  (* false *)
+        | AEq (x,y) -> arithEval x >>= fun n ->
+                        arithEval y >>= fun m ->
+                                        ret (n = m) // of aExp * aExp   (* numeric equality *)
+        | ALt (x,y) -> arithEval x >>= fun n ->
+                        arithEval y >>= fun m ->
+                                        ret (n<m)//of aExp * aExp   (* numeric less than *)
+
+        | Not bool -> boolEval bool >>= fun x ->
+                                        ret (not x) //of bExp          (* boolean not *)
+        | Conj (x,y) -> boolEval x >>= fun n ->
+                            boolEval y >>= fun m ->
+                                    ret (n && m) //of bExp * bExp  (* boolean conjunction *)
+        | IsVowel c -> charEval c >>= fun x ->
+                                    ret (not (isConsonant x))//of cExp      (* check for vowel *)
+        | IsLetter c -> charEval c >>= fun x ->
+                                    ret (System.Char.IsLetter x)//of cExp     (* check for letter *)
+        | IsDigit c -> charEval c >>= fun x ->
+                                        ret (System.Char.IsDigit x)//of cExp      (* check for digit *)*)
+            
 
 
     type stm =                (* statements *)
@@ -113,3 +193,10 @@ module internal Eval
     }
 
     let mkBoard c defaultSq boardStmnt ids = failwith "Not implemented"
+    
+    
+   
+    
+    
+    
+       
