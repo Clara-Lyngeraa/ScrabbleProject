@@ -2,6 +2,8 @@
 #Fart City
 
 ----
-  #To run project stand in git-repo-folder
-  type: dotnet run --project ScrabbleTemplate
+# Running the program
+From root, type in *make* in the terminal.
+
+Alternatively, type in *dotnet run --project ScrabbleTemplate/ScrabbleTemplate*
   
