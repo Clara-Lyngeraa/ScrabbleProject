@@ -2,7 +2,7 @@
 
 module internal MultiSet
 
-    type MultiSet<'a>
+    type internal MultiSet<'a>
 
     val empty : MultiSet<'a>
     val add   : 'a -> uint32 -> MultiSet<'a> -> MultiSet<'a>

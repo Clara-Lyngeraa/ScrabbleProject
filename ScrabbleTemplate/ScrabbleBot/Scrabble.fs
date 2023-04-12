@@ -1,4 +1,4 @@
-﻿namespace YourClientName
+﻿namespace assCRacK
 
 open ScrabbleUtil
 open ScrabbleUtil.ServerCommunication
