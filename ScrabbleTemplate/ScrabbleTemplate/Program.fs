@@ -1,4 +1,6 @@
-﻿// Learn more about F# at http://fsharp.org
+﻿module ScrabbleTemplate.Program
+
+// Learn more about F# at http://fsharp.org
 
 let time f =
     let start = System.DateTime.Now
