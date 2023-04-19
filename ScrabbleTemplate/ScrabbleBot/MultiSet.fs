@@ -8,7 +8,7 @@ module internal MultiSet
     let add   : 'a -> uint32 -> MultiSet<'a> -> MultiSet<'a> = fun _ _ _ -> failwith "Not implemented" 
     let fold  : ('b -> 'a -> uint32 -> 'b) -> 'b -> MultiSet<'a> -> 'b = fun _ _ _ -> failwith "Not implemented"*)
     
-    type internal MultiSet<'a when 'a : comparison> = S of Map<'a, uint32>
+    type MultiSet<'a when 'a : comparison> = S of Map<'a, uint32>
     
     (* Green *)
     let empty = S Map.empty

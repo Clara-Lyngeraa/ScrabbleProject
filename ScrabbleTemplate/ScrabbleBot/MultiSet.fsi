@@ -7,7 +7,7 @@ module internal MultiSet
     val add   : 'a -> uint32 -> MultiSet<'a> -> MultiSet<'a>
     val fold  : ('b -> 'a -> uint32 -> 'b) -> 'b -> MultiSet<'a> -> 'b*)
     
-type MultiSet<'a when 'a : comparison> = S of Map<'a, uint32>
+    type MultiSet<'a when 'a : comparison> = S of Map<'a, uint32>
     
     (* Green *)
     val empty : MultiSet<'a>
