@@ -1,5 +1,6 @@
 ﻿namespace assCRacK
 
+open System.Xml.Schema
 open ScrabbleUtil
 open ScrabbleUtil.ServerCommunication
 
@@ -57,22 +58,47 @@ module State =
 
 module Scrabble =
     open System.Threading
+    // Figure out what move to make:
+    //let makeMove hand board =
+    (*var msg = buildword
+    match msg with
+    - some -> send SMPlayWord
+    - none -> change tiles
+    match change tiles with
+    - some -> send SMChangeTiles
+    - none -> pass
+    match pass with
+    - some -> send SMPass
+    - none -> SMForfeit
+    *)
+    
+    let tryBuildWord (st : State.state) =
+        let handList = MultiSet.toList st.hand
+        let head = handList.Head
 
+        
     let playGame cstream pieces (st : State.state) =
 
         let rec aux (st : State.state) =
             Print.printHand pieces (State.hand st)
 
             // remove the force print when you move on from manual input (or when you have learnt the format)
-            forcePrint "Input move (format '(<x-coordinate> <y-coordinate> <piece id><character><point-value> )*', note the absence of space between the last inputs)\n\n"
-            let input =  System.Console.ReadLine()
-            let move = RegEx.parseMove input
-
-            debugPrint (sprintf "Player %d -> Server:\n%A\n" (State.playerNumber st) move) // keep the debug lines. They are useful.
-            send cstream (SMPlay move)
+            // forcePrint "Input move (format '(<x-coordinate> <y-coordinate> <piece id><character><point-value> )*', note the absence of space between the last inputs)\n\n"
+            // let input =  System.Console.ReadLine()
+            
+            let move = SMForfeit
+            
+            //make move
+            
+            // trybuildword
+            // match svar
+            // makeMove(svar)
+            
+            // debugPrint (sprintf "Player %d -> Server:\n%A\n" (State.playerNumber st) move) // keep the debug lines. They are useful.
+            send cstream move
 
             let msg = recv cstream
-            debugPrint (sprintf "Player %d <- Server:\n%A\n" (State.playerNumber st) move) // keep the debug lines. They are useful.
+            // debugPrint (sprintf "Player %d <- Server:\n%A\n" (State.playerNumber st) move) // keep the debug lines. They are useful.
 
             match msg with
             | RCM (CMPlaySuccess(ms, points, newPieces)) ->
