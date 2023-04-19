@@ -20,7 +20,7 @@ module internal Eval
              if y <> 0 then ret (x / y) else fail DivisionByZero
 
 
-    type aExp =
+    type internal aExp =
         | N of int
         | V of string
         | WL
@@ -33,14 +33,14 @@ module internal Eval
         | CharToInt of cExp
      
 
-    and cExp =
+    and internal cExp =
        | C  of char  (* Character value *)
        | CV of aExp  (* Character lookup at word index *)
        | ToUpper of cExp
        | ToLower of cExp
        | IntToChar of aExp
 
-    type bExp =             
+    type internal bExp =             
        | TT                   (* true *)
        | FF                   (* false *)
 
@@ -144,7 +144,7 @@ module internal Eval
             
 
 
-    type stm =                (* statements *)
+    type internal stm =                (* statements *)
     | Declare of string       (* variable declaration *)
     | Ass of string * aExp    (* variable assignment *)
     | Skip                    (* nop *)
@@ -156,7 +156,7 @@ module internal Eval
 
 (* Part 3 (Optional) *)
 
-    type StateBuilder() =
+    type internal StateBuilder() =
 
         member this.Bind(f, x)    = f >>= x
         member this.Return(x)     = ret x
@@ -174,19 +174,19 @@ module internal Eval
 
 (* Part 4 *) 
 
-    type word = (char * int) list
-    type squareFun = word -> int -> int -> Result<int, Error>
+    type internal word = (char * int) list
+    type internal squareFun = word -> int -> int -> Result<int, Error>
 
     let stmntToSquareFun stm = failwith "Not implemented"
 
 
-    type coord = int * int
+    type internal coord = int * int
 
-    type boardFun = coord -> Result<squareFun option, Error> 
+    type internal boardFun = coord -> Result<squareFun option, Error> 
 
     let stmntToBoardFun stm m = failwith "Not implemented"
 
-    type board = {
+    type internal board = {
         center        : coord
         defaultSquare : squareFun
         squares       : boardFun

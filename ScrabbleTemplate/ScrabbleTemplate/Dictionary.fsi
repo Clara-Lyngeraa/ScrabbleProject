@@ -1,4 +1,4 @@
-module ScrabbleTemplate.Dictionary
+module internal ScrabbleTemplate.Dictionary
 
     type Dict
     val empty : unit -> Dict

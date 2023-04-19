@@ -2,11 +2,11 @@
 
     open FParsec
 
-    type ParserResult<'a> = ParserResult<'a, unit>
+    type internal ParserResult<'a> = ParserResult<'a, unit>
 
-    module TextParser =
+    module internal TextParser =
 
-        type Parser<'a> = Parser<'a, unit>
+        type internal Parser<'a> = Parser<'a, unit>
 
         val satisfy : (char -> bool) -> Parser<char>
 
