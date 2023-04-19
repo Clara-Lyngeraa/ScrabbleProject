@@ -54,10 +54,27 @@ module State =
     let dict st          = st.dict
     let playerNumber st  = st.playerNumber
     let hand st          = st.hand
+    
+    let updateHand st newHand =
+        mkState st.board st.dict st.playerNumber newHand
 
 module Scrabble =
     open System.Threading
 
+    let addToHand (newTiles: (uint32*uint32) List) (st: State.state) =
+        let lst = List.fold(fun acc(*hånd*) elem  ->  (fst elem) :: acc ) (MultiSet.toList (State.hand st)) newTiles
+        for i in lst do
+        printfn"added %d to hand" i
+        
+    (*let removeFromHand st =
+        MultiSet.toList( List.fold (fun acc elem -> (MultiSet.removeSingle elem acc)) (State.hand st) (MultiSet.toList (State.hand st)))*)
+            (*if MultiSet.isEmpty lst
+            then printfn "skrrrt the hand is empty"
+            else printfn "this is not very skrrrt since the hand isn't empty"*)
+        
+    let removeFromHand st =
+        List.fold (fun acc elem -> elem :: acc) List.empty (MultiSet.toList (State.hand st))
+    
     let playGame cstream pieces (st : State.state) =
 
         let rec aux (st : State.state) =
@@ -67,12 +84,21 @@ module Scrabble =
             forcePrint "Input move (format '(<x-coordinate> <y-coordinate> <piece id><character><point-value> )*', note the absence of space between the last inputs)\n\n"
             let input =  System.Console.ReadLine()
             let move = RegEx.parseMove input
+            
+            let move1 = removeFromHand st
+            printfn "%d" move1.Length
+            (*let move2 =
+                addToHand [(1u,1u);(2u,2u);(3u,3u)] st*)
 
-            debugPrint (sprintf "Player %d -> Server:\n%A\n" (State.playerNumber st) move) // keep the debug lines. They are useful.
-            send cstream (SMPlay move)
+            debugPrint (sprintf "Player %d -> Server:\n%A\n" (State.playerNumber st) move1) // keep the debug lines. They are useful.
+            printfn "trying to change tiles"
+            send cstream (SMChange move1)
+            printfn "attempt succed"
+            
+            Print.printHand pieces (State.hand st)
 
             let msg = recv cstream
-            debugPrint (sprintf "Player %d <- Server:\n%A\n" (State.playerNumber st) move) // keep the debug lines. They are useful.
+            debugPrint (sprintf "Player %d <- Server:\n%A\n" (State.playerNumber st) move1) // keep the debug lines. They are useful.
 
             match msg with
             | RCM (CMPlaySuccess(ms, points, newPieces)) ->
