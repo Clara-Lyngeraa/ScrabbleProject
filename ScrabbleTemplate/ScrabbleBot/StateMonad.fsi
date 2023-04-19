@@ -1,13 +1,13 @@
 ﻿module internal StateMonad
 
-    type internal SM<'a>
-    type internal State
+    type SM<'a>
+    type State
 
-    type internal Result<'a, 'b>  =
+    type Result<'a, 'b>  =
         | Success of 'a
         | Failure of 'b
 
-    type internal Error = 
+    type Error = 
         | VarExists of string
         | VarNotFound of string
         | IndexOutOfBounds of int

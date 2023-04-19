@@ -2,11 +2,11 @@
 
     open FParsec
 
-    type internal ParserResult<'a> = ParserResult<'a, unit>
+    type ParserResult<'a> = ParserResult<'a, unit>
 
-    module internal TextParser =
+    module TextParser =
 
-        type internal Parser<'a> = Parser<'a, unit>
+        type Parser<'a> = Parser<'a, unit>
 
         let satisfy f : Parser<char> = satisfy f
 

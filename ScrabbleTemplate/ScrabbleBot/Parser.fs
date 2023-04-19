@@ -179,13 +179,13 @@ module internal Parser
     let stmParse = pstring "not implemented"
 
     (* The rest of your parser goes here *)
-    type internal word   = (char * int) list
-    type internal squareFun = word -> int -> int -> Result<int, Error>
-    type internal square = Map<int, squareFun>
+    type word   = (char * int) list
+    type squareFun = word -> int -> int -> Result<int, Error>
+    type square = Map<int, squareFun>
     
-    type internal boardFun2 = coord -> Result<square option, Error>
+    type boardFun2 = coord -> Result<square option, Error>
         
-    type internal board = {
+    type board = {
         center        : coord
         defaultSquare : square
         squares       : boardFun2
