@@ -1,11 +1,11 @@
-module ScrabbleTemplate.Dictionary
+module internal ScrabbleTemplate.Dictionary
 
-type CH =
+type internal CH =
     | Char of char
     | Empty
     
    
-type Dict =  
+type internal Dict =  
     | Leaf of bool 
     | Node of bool * Map<CH, Dict>
 

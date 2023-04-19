@@ -3,22 +3,25 @@
 
 module internal StateMonad
 
-    type Error = 
+    type internal Error = 
         | VarExists of string
         | VarNotFound of string
         | IndexOutOfBounds of int
         | DivisionByZero 
         | ReservedName of string           
 
-    type Result<'a, 'b>  =
+    type internal Result<'a, 'b>  =
         | Success of 'a
         | Failure of 'b
 
-    type State = { vars     : Map<string, int> list
-                   word     : (char * int) list 
-                   reserved : Set<string> }
-
-    type SM<'a> = S of (State -> Result<'a * State, Error>)
+    type internal State =
+       {
+            vars     : Map<string, int> list
+            word     : (char * int) list 
+            reserved : Set<string>
+       }
+       
+    type internal SM<'a> = S of (State -> Result<'a * State, Error>)
 
     let mkState lst word reserved = 
            { vars = [Map.ofList lst];

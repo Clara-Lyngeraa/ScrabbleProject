@@ -5,13 +5,13 @@ module internal Parser
     open ScrabbleUtil
     open StateMonad
     
-    type word   = (char * int) list
-    type squareFun = word -> int -> int -> Result<int, Error>
-    type square = Map<int, squareFun>
+    type internal word   = (char * int) list
+    type internal squareFun = word -> int -> int -> Result<int, Error>
+    type internal square = Map<int, squareFun>
     
-    type boardFun2 = coord -> Result<square option, Error>
+    type internal boardFun2 = coord -> Result<square option, Error>
         
-    type board = {
+    type internal board = {
         center        : coord
         defaultSquare : square
         squares       : boardFun2
