@@ -3,8 +3,10 @@
 open System.Xml.Schema
 open ScrabbleUtil
 open ScrabbleUtil.ServerCommunication
+open Dictionary
 
 open System.IO
+open AuxMethods
 
 open ScrabbleUtil.DebugPrint
 
@@ -44,12 +46,13 @@ module State =
 
     type state = {
         board         : Parser.board
-        dict          : ScrabbleUtil.Dictionary.Dict
+        dict          : Dict
         playerNumber  : uint32
         hand          : MultiSet.MultiSet<uint32>
+        anchor        : uint32 * uint32
     }
 
-    let mkState b d pn h = {board = b; dict = d;  playerNumber = pn; hand = h }
+    let mkState b d pn h = {board = b; dict = d;  playerNumber = pn; hand = h; anchor = (0u,0u) }
 
     let board st         = st.board
     let dict st          = st.dict
@@ -71,10 +74,40 @@ module Scrabble =
     - some -> send SMPass
     - none -> SMForfeit
     *)
+
     
-    let tryBuildWord (st : State.state) =
-        let handList = MultiSet.toList st.hand
-        let head = handList.Head
+ 
+
+    let tryBuildWord (pieces: Map<uint32,tile>) (st : State.state) = 
+        // let hand = HandToChar st.hand pieces
+        let word : char list = []
+        let charDicts : Dict list = []
+        let fuckedCounter = -1
+        
+        let hand = ['P';'L';'X';'A';'Z';'Y']
+        
+        let rec traverse (word : char list) (hand: char list) (dict: Dict) (charDicts: Dict list) index =
+            match step hand[index] dict with
+            | None ->
+                if index < hand.Length
+                then traverse word hand dict charDicts (index+1)
+                else
+                    let newWord = List.removeAt (hand.Length-1) word
+                    let newHand = appendChar hand word (hand.Length-1)
+                    let newCharDicts = List.removeAt (charDicts.Length-1) charDicts
+                    let newDict = charDicts[newHand.Length-1]
+                    
+                    fuckedCounter+1
+                    traverse newWord newHand newDict newCharDicts fuckedCounter
+            | Some (isWord,newDict) ->
+                let newWord = appendChar word hand index
+                let newHand = List.removeAt index hand
+                let newCharDicts = appendDict charDicts newDict
+                
+                if isWord then newWord                
+                else traverse newWord newHand newDict newCharDicts 0
+        
+        traverse word hand st.dict charDicts 0
 
         
     let playGame cstream pieces (st : State.state) =
@@ -85,6 +118,9 @@ module Scrabble =
             // remove the force print when you move on from manual input (or when you have learnt the format)
             // forcePrint "Input move (format '(<x-coordinate> <y-coordinate> <piece id><character><point-value> )*', note the absence of space between the last inputs)\n\n"
             // let input =  System.Console.ReadLine()
+            
+            tryBuildWord pieces st
+
             
             let move = SMForfeit
             
