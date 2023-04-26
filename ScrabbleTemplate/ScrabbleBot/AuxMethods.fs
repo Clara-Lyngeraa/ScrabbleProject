@@ -35,5 +35,7 @@ module internal AuxMethods
     
     let appendDict (charDicts: Dict list) (dict: Dict) =
         charDicts @ (dictAsList dict) 
-     
+    
+    let charListToString (cl : char list) =
+        System.String.Concat(Array.ofList(cl))
    

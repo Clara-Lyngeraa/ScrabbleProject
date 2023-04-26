@@ -87,31 +87,49 @@ module Scrabble =
         let hand = ['P';'L';'X';'A';'Z';'Y']
         
         let rec traverse (word : char list) (hand: char list) (dict: Dict) (charDicts: Dict list) index =
+            
+            printfn "%c" hand[index]
+            printfn "%d" hand.Length
             match step hand[index] dict with
             | None ->
-                if index < hand.Length
+                if index < hand.Length-1
                 then traverse word hand dict charDicts (index+1)
                 else
-                    let newWord = List.removeAt (hand.Length-1) word
-                    let newHand = appendChar hand word (hand.Length-1)
+                    
+                    let newWord = List.removeAt (word.Length-1) word
+                    let z = charListToString newWord
+                    printfn " New word in loop: %s" z
+                    let newHand = appendChar hand word (word.Length-1)
+                    let m = charListToString newHand
+                    printfn " New Hand-- in loop: %s" m
                     let newCharDicts = List.removeAt (charDicts.Length-1) charDicts
                     let newDict = charDicts[newHand.Length-1]
+                    traverse newWord newHand newDict newCharDicts (fuckedCounter+1)
                     
-                    fuckedCounter+1
-                    traverse newWord newHand newDict newCharDicts fuckedCounter
             | Some (isWord,newDict) ->
                 let newWord = appendChar word hand index
+                let x = charListToString newWord
+                printfn " New word: %s" x
+                
                 let newHand = List.removeAt index hand
+                let y = charListToString newHand
+                printfn " New Hand--: %s" y
+                
                 let newCharDicts = appendDict charDicts newDict
                 
-                if isWord then newWord                
+                
+                if lookup "HI" st.dict
+                then
+                    printfn "Is word %b" isWord
+                    printfn "Finished Word: skrrrt %s" (charListToString newWord)
+                    newWord                
                 else traverse newWord newHand newDict newCharDicts 0
         
         traverse word hand st.dict charDicts 0
 
         
     let playGame cstream pieces (st : State.state) =
-
+        
         let rec aux (st : State.state) =
             Print.printHand pieces (State.hand st)
 
@@ -119,7 +137,8 @@ module Scrabble =
             // forcePrint "Input move (format '(<x-coordinate> <y-coordinate> <piece id><character><point-value> )*', note the absence of space between the last inputs)\n\n"
             // let input =  System.Console.ReadLine()
             
-            tryBuildWord pieces st
+            let x = tryBuildWord pieces st
+            printfn "%s" (charListToString x)
 
             
             let move = SMForfeit
