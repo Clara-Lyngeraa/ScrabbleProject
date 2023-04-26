@@ -61,10 +61,10 @@ module State =
 module Scrabble =
     open System.Threading
 
-    let addToHand (newTiles: (uint32*uint32) List) (st: State.state) =
+    (*let addToHand (newTiles: (uint32*uint32) List) (st: State.state) =
         let lst = List.fold(fun acc(*hånd*) elem  ->  (fst elem) :: acc ) (MultiSet.toList (State.hand st)) newTiles
         for i in lst do
-        printfn"added %d to hand" i
+        printfn"added %d to hand" i*)
         
     (*let removeFromHand st =
         MultiSet.toList( List.fold (fun acc elem -> (MultiSet.removeSingle elem acc)) (State.hand st) (MultiSet.toList (State.hand st)))*)
@@ -72,9 +72,6 @@ module Scrabble =
             then printfn "skrrrt the hand is empty"
             else printfn "this is not very skrrrt since the hand isn't empty"*)
         
-    let removeFromHand st =
-        List.fold (fun acc elem -> elem :: acc) List.empty (MultiSet.toList (State.hand st))
-    
     let playGame cstream pieces (st : State.state) =
 
         let rec aux (st : State.state) =
@@ -87,9 +84,11 @@ module Scrabble =
             
             let move1 = removeFromHand st
             printfn "%d" move1.Length
-            (*let move2 =
-                addToHand [(1u,1u);(2u,2u);(3u,3u)] st*)
-
+            let move2 =
+                addToHand [(1u,1u);(2u,2u);(3u,3u)] st
+                
+            Print.printHand pieces (State.hand st)
+            
             debugPrint (sprintf "Player %d -> Server:\n%A\n" (State.playerNumber st) move1) // keep the debug lines. They are useful.
             printfn "trying to change tiles"
             send cstream (SMChange move1)
@@ -100,10 +99,20 @@ module Scrabble =
             let msg = recv cstream
             debugPrint (sprintf "Player %d <- Server:\n%A\n" (State.playerNumber st) move1) // keep the debug lines. They are useful.
 
+            
             match msg with
             | RCM (CMPlaySuccess(ms, points, newPieces)) ->
+                 
+                 let removeFromHand st =
+                    List.fold (fun acc elem -> MultiSet.removeSingle (fst(snd (elem))) acc) st.hand ms
+                    
+                 let addToHand st =
+                    List.fold (fun acc elem -> MultiSet.add (fst elm) (snd elm) acc) removeFromHand newPieces
+        
                 (* Successful play by you. Update your state (remove old tiles, add the new ones, change turn, etc) *)
-                let st' = st // This state needs to be updated
+                
+                newBoardState
+                let st' = st // This state needs to be updated mkstate
                 aux st'
             | RCM (CMPlayed (pid, ms, points)) ->
                 (* Successful play by other player. Update your state *)
