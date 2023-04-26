@@ -46,34 +46,39 @@ module State =
         dict          : ScrabbleUtil.Dictionary.Dict
         playerNumber  : uint32
         hand          : MultiSet.MultiSet<uint32>
+        boardState    : Map<coord, char * int>
+        squaresUsed   : Map<coord, uint32>
+        lastTilePlaced : coord
     }
 
-    let mkState b d pn h = {board = b; dict = d;  playerNumber = pn; hand = h }
+    let mkState b d pn h bs used lastTile =
+        {board = b; dict = d;  playerNumber = pn; hand = h; boardState =bs; squaresUsed = used; lastTilePlaced = lastTile} 
 
     let board st         = st.board
     let dict st          = st.dict
     let playerNumber st  = st.playerNumber
     let hand st          = st.hand
-    
     let updateHand st newHand =
         mkState st.board st.dict st.playerNumber newHand
 
+    
 module Scrabble =
     open System.Threading
-
-    (*let addToHand (newTiles: (uint32*uint32) List) (st: State.state) =
-        let lst = List.fold(fun acc(*hånd*) elem  ->  (fst elem) :: acc ) (MultiSet.toList (State.hand st)) newTiles
-        for i in lst do
-        printfn"added %d to hand" i*)
+   
+    let firstLetter (st: State.state) =
+        match st.boardState.TryFind st.lastTilePlaced with //st.lastTilePlaced
+       | Some s -> fst s
+       | None -> ' '
+    
+    let isHorizontal (st: State.state) =
+        let anchor = st.lastTilePlaced
+        match (st.boardState.TryFind ((fst anchor)-1, snd anchor)) with
+        | Some s -> true
+        | None -> false
         
-    (*let removeFromHand st =
-        MultiSet.toList( List.fold (fun acc elem -> (MultiSet.removeSingle elem acc)) (State.hand st) (MultiSet.toList (State.hand st)))*)
-            (*if MultiSet.isEmpty lst
-            then printfn "skrrrt the hand is empty"
-            else printfn "this is not very skrrrt since the hand isn't empty"*)
-        
+    let removeHand (st: State.state) = List.fold (fun acc elem -> MultiSet.removeSingle elem acc) st.hand (MultiSet.toList st.hand)   
     let playGame cstream pieces (st : State.state) =
-
+        
         let rec aux (st : State.state) =
             Print.printHand pieces (State.hand st)
 
@@ -82,40 +87,26 @@ module Scrabble =
             let input =  System.Console.ReadLine()
             let move = RegEx.parseMove input
             
-            let move1 = removeFromHand st
-            printfn "%d" move1.Length
-            let move2 =
-                addToHand [(1u,1u);(2u,2u);(3u,3u)] st
                 
             Print.printHand pieces (State.hand st)
+            //debugPrint (sprintf "Player %d -> Server:\n%A\n" (State.playerNumber st) move1) // keep the debug lines. They are useful.
             
-            debugPrint (sprintf "Player %d -> Server:\n%A\n" (State.playerNumber st) move1) // keep the debug lines. They are useful.
-            printfn "trying to change tiles"
-            send cstream (SMChange move1)
-            printfn "attempt succed"
+            send cstream (SMPlay move)
             
-            Print.printHand pieces (State.hand st)
-
             let msg = recv cstream
-            debugPrint (sprintf "Player %d <- Server:\n%A\n" (State.playerNumber st) move1) // keep the debug lines. They are useful.
-
-            
+            //debugPrint (sprintf "Player %d <- Server:\n%A\n" (State.playerNumber st) move1) // keep the debug lines. They are useful.
             match msg with
             | RCM (CMPlaySuccess(ms, points, newPieces)) ->
-                 
-                 let removeFromHand st =
-                    List.fold (fun acc elem -> MultiSet.removeSingle (fst(snd (elem))) acc) st.hand ms
-                    
-                 let addToHand st =
-                    List.fold (fun acc elem -> MultiSet.add (fst elm) (snd elm) acc) removeFromHand newPieces
+                let removeFromHand = List.fold (fun acc elem -> MultiSet.removeSingle (fst(snd (elem))) acc) st.hand ms
+                let addToHand = List.fold (fun acc elem -> MultiSet.add (fst elem) (snd elem) acc) removeFromHand newPieces
         
-                (* Successful play by you. Update your state (remove old tiles, add the new ones, change turn, etc) *)
-                
-                newBoardState
-                let st' = st // This state needs to be updated mkstate
+                let newBoardState = Map.add (0,0) ('a',0)  st.boardState
+                let lastTile = firstLetter st
+                let st' = st // This state needs to be updated mkstate -> newLastTile
                 aux st'
             | RCM (CMPlayed (pid, ms, points)) ->
                 (* Successful play by other player. Update your state *)
+                //newBoardState
                 let st' = st // This state needs to be updated
                 aux st'
             | RCM (CMPlayFailed (pid, ms)) ->
@@ -153,5 +144,6 @@ module Scrabble =
                   
         let handSet = List.fold (fun acc (x, k) -> MultiSet.add x k acc) MultiSet.empty hand
 
-        fun () -> playGame cstream tiles (State.mkState board dict playerNumber handSet)
+        fun () -> playGame cstream tiles (State.mkState board dict playerNumber handSet Map.empty Map.empty (0,0))
+        
         
