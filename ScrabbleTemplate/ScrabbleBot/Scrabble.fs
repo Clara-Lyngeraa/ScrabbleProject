@@ -1,5 +1,6 @@
 ﻿namespace assCRacK
 
+open Parser
 open ScrabbleUtil
 open ScrabbleUtil.ServerCommunication
 
@@ -48,7 +49,7 @@ module State =
         hand          : MultiSet.MultiSet<uint32>
         boardState    : Map<coord, char * int>
         squaresUsed   : Map<coord, uint32>
-        lastTilePlaced : coord
+        lastTilePlaced : coord 
     }
 
     let mkState b d pn h bs used lastTile =
@@ -66,15 +67,15 @@ module Scrabble =
     open System.Threading
    
     let firstLetter (st: State.state) =
-        match st.boardState.TryFind st.lastTilePlaced with //st.lastTilePlaced
+        match st.boardState.TryFind (st.lastTilePlaced) with //st.lastTilePlaced
        | Some s -> fst s
        | None -> ' '
     
     let isHorizontal (st: State.state) =
         let anchor = st.lastTilePlaced
         match (st.boardState.TryFind ((fst anchor)-1, snd anchor)) with
-        | Some s -> true
-        | None -> false
+        | Some s ->  true
+        | None ->  false
         
     let removeHand (st: State.state) = List.fold (fun acc elem -> MultiSet.removeSingle elem acc) st.hand (MultiSet.toList st.hand)   
     let playGame cstream pieces (st : State.state) =
@@ -89,20 +90,27 @@ module Scrabble =
             
                 
             Print.printHand pieces (State.hand st)
-            //debugPrint (sprintf "Player %d -> Server:\n%A\n" (State.playerNumber st) move1) // keep the debug lines. They are useful.
+            debugPrint (sprintf "Player %d -> Server:\n%A\n" (State.playerNumber st) move) // keep the debug lines. They are useful.
             
             send cstream (SMPlay move)
             
             let msg = recv cstream
-            //debugPrint (sprintf "Player %d <- Server:\n%A\n" (State.playerNumber st) move1) // keep the debug lines. They are useful.
+            debugPrint (sprintf "Player %d <- Server:\n%A\n" (State.playerNumber st) move) // keep the debug lines. They are useful.
             match msg with
             | RCM (CMPlaySuccess(ms, points, newPieces)) ->
                 let removeFromHand = List.fold (fun acc elem -> MultiSet.removeSingle (fst(snd (elem))) acc) st.hand ms
-                let addToHand = List.fold (fun acc elem -> MultiSet.add (fst elem) (snd elem) acc) removeFromHand newPieces
+                let addedToHand = List.fold (fun acc elem -> MultiSet.add (fst elem) (snd elem) acc) removeFromHand newPieces
         
-                let newBoardState = Map.add (0,0) ('a',0)  st.boardState
-                let lastTile = firstLetter st
-                let st' = st // This state needs to be updated mkstate -> newLastTile
+                let newBoardState = List.fold(fun acc (coord,(_, (x,y))) -> Map.add coord (x,y) acc ) st.boardState ms //Map.add (0,0) ('a',0)  st.boardState
+                let newSquaresUsed = List.fold (fun acc (coord,(int, _)) -> Map.add coord int acc) st.squaresUsed ms
+               
+                let lastTile =
+                    match fst (List.last ms) with
+                    | (x,y) when x <> fst  st.lastTilePlaced -> ((x,y): coord), isHorizontal st = true
+                    | (x,y) when y <> snd  st.lastTilePlaced -> ((x,y): coord), isHorizontal st = false
+
+                let st' = State.mkState st.board st.dict st.playerNumber addedToHand newBoardState newSquaresUsed (fst lastTile) // This state needs to be updated mkstate -> newLastTile
+                
                 aux st'
             | RCM (CMPlayed (pid, ms, points)) ->
                 (* Successful play by other player. Update your state *)
@@ -111,7 +119,8 @@ module Scrabble =
                 aux st'
             | RCM (CMPlayFailed (pid, ms)) ->
                 (* Failed play. Update your state *)
-                let st' = st // This state needs to be updated
+                let newBoardState = List.fold(fun acc (coord,(_, (x,y))) -> Map.add coord (x,y) acc ) st.boardState ms
+                let st' = State.mkState st.board st.dict st.playerNumber st.hand newBoardState st.squaresUsed st.lastTilePlaced
                 aux st'
             | RCM (CMGameOver _) -> ()
             | RCM a -> failwith (sprintf "not implmented: %A" a)
@@ -144,6 +153,6 @@ module Scrabble =
                   
         let handSet = List.fold (fun acc (x, k) -> MultiSet.add x k acc) MultiSet.empty hand
 
-        fun () -> playGame cstream tiles (State.mkState board dict playerNumber handSet Map.empty Map.empty (0,0))
+        fun () -> playGame cstream tiles (State.mkState board dict playerNumber handSet Map.empty Map.empty ((0,0): coord))
         
         
