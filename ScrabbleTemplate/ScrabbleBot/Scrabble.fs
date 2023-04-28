@@ -35,6 +35,7 @@ module RegEx =
  module Print =
 
     let printHand pieces hand =
+        printfn ""
         hand |>
         MultiSet.fold (fun _ x i -> forcePrint (sprintf "%d -> (%A, %d)\n" x (Map.find x pieces) i)) ()
 
@@ -49,7 +50,6 @@ module State =
         dict          : Dict
         playerNumber  : uint32
         hand          : MultiSet.MultiSet<uint32>
-        anchor        : uint32 * uint32
         boardState    : Map<coord, char * int>
         squaresUsed   : Map<coord, uint32>
         lastTilePlaced : coord
@@ -60,7 +60,6 @@ module State =
         dict = d;  
         playerNumber = pn; 
         hand = h; 
-        anchor = (0u,0u); 
         boardState = bs; 
         squaresUsed = used; 
         lastTilePlaced = lastTile;
@@ -94,53 +93,74 @@ module Scrabble =
  
 
     let tryBuildWord (pieces: Map<uint32,tile>) (st : State.state) = 
-        let hand = HandToChar st.hand pieces 
+        // let hand = HandToChar st.hand pieces 
         let word : char list = []
         let charDicts : Dict list = []
-        let fuckedCounter = -1
+        let mutable traverseCount = 0
         
-        // let hand = ['P';'L';'X';'A';'Z';'Y']
+        // BDFNUYY
+        let hand = ['B';'D';'F';'N';'U';'Y';'Y']
+        printfn "Our Hand: %s" (charListToString hand)
+        printfn ""
         
-        let rec traverse (word : char list) (hand: char list) (dict: Dict) (charDicts: Dict list) index =
-            
-            printfn "%c" hand[index]
-            printfn "%d" hand.Length
-            match step hand[index] dict with
+        let rec traverse (word : char list) (hand: char list) (dict: Dict) (charDicts: Dict list) handIndex stepIndex =
+            printfn "%d" traverseCount
+            traverseCount <- traverseCount + 1
+            match step hand[stepIndex] dict with
             | None ->
-                if index < hand.Length-1
-                then traverse word hand dict charDicts (index+1)
-                else
+                printfn "None -> Index and hand.Length at top: %d %d" handIndex (hand.Length)
+                if handIndex < hand.Length
+                then traverse word hand dict charDicts (handIndex+1) stepIndex
+                else 
+                        printfn ""
+                        printfn "None -> Word before remove: %s" (charListToString word)
+                        let newWord = List.removeAt (word.Length-1) word
+                        
+                        printfn "None -> newWord after remove: %s" (charListToString newWord)
+                        printfn "None -> Hand before append: %s" (charListToString hand)
+                        let newHand = appendChar hand word (word.Length-1)
+                        printfn "None -> newHand after append: %s" (charListToString newHand)
+                        
+                        
+                        let charDictLength = charDicts.Length-1
+                        let newCharDicts = List.removeAt charDictLength charDicts
+                        let newCharDictLength = newCharDicts.Length-1
+
+                        
+                        printfn "None -> Index: %d" handIndex
+                        printfn ""
+                        
+                        if newWord.Length = 0
+                            then
+                                traverse newWord newHand st.dict newCharDicts (handIndex % hand.Length) (stepIndex + 1)
+                            else
+                                let newDict = newCharDicts[newCharDictLength]
+                                traverse newWord newHand newDict newCharDicts (handIndex % hand.Length) stepIndex
                     
-                    let newWord = List.removeAt (word.Length-1) word
-                    let z = charListToString newWord
-                    printfn " New word in loop: %s" z
-                    let newHand = appendChar hand word (word.Length-1)
-                    let m = charListToString newHand
-                    printfn " New Hand-- in loop: %s" m
-                    let newCharDicts = List.removeAt (charDicts.Length-1) charDicts
-                    let newDict = charDicts[newHand.Length-1]
-                    traverse newWord newHand newDict newCharDicts (fuckedCounter+1)
-                    
-            | Some (isWord,newDict) ->
-                let newWord = appendChar word hand index
-                let x = charListToString newWord
-                printfn " New word: %s" x
+            | Some (_,newDict) ->
                 
-                let newHand = List.removeAt index hand
-                let y = charListToString newHand
-                printfn " New Hand--: %s" y
+                printfn "Some -> Index at top %d" handIndex
+                printfn ""
+                printfn "Some -> Word before append: %s" (charListToString word)
+                let newWord = appendChar word hand handIndex
+                printfn "Some -> newWord after append: %s" (charListToString newWord)
+                
+                printfn "Some -> Hand before remove: %s" (charListToString hand)
+                let newHand = List.removeAt handIndex hand
+                printfn "Some -> newHand after remove: %s" (charListToString newHand)
                 
                 let newCharDicts = appendDict charDicts newDict
+
                 
                 
                 if lookup (charListToString newWord) st.dict
                 then
-                    printfn "Is word %b" isWord
-                    printfn "Finished Word: skrrrt %s" (charListToString newWord)
+                    printfn "Finished Word: %s" (charListToString newWord)
                     newWord                
-                else traverse newWord newHand newDict newCharDicts 0
+                else traverse newWord newHand newDict newCharDicts handIndex stepIndex
         
-        traverse word hand st.dict charDicts 0
+        printfn "Index at beginning: %d" 0
+        traverse word hand st.dict charDicts 0 0
 
         
    
@@ -159,16 +179,14 @@ module Scrabble =
     let playGame cstream pieces (st : State.state) =
         
         let rec aux (st : State.state) =
+            printfn ""
             Print.printHand pieces (State.hand st)
 
             // remove the force print when you move on from manual input (or when you have learnt the format)
             // forcePrint "Input move (format '(<x-coordinate> <y-coordinate> <piece id><character><point-value> )*', note the absence of space between the last inputs)\n\n"
             // let input =  System.Console.ReadLine()
-            printfn "aux before"
-            let y = charListToString (HandToChar st.hand pieces)
-            printfn "%s" y
+
             let x = tryBuildWord pieces st
-            printfn "%s" (charListToString x)
 
             
             let move = SMForfeit
@@ -231,13 +249,8 @@ module Scrabble =
         //let dict = dictf true // Uncomment if using a gaddag for your dictionary
         let dict = dictf false // Uncomment if using a trie for your dictionary
         let board = Parser.mkBoard boardP
-        
-        let testHand = List.length hand
-        printfn "testHand: %d" testHand
         let handSet = List.fold (fun acc (x, k) -> MultiSet.add x k acc) MultiSet.empty hand
-        let testHandSet = MultiSet.size handSet
-        printfn "testHandSet: %d" testHandSet
-
-        fun () -> playGame cstream tiles (State.mkState board dict playerNumber handSet Map.empty Map.empty (0,0))
+    
+        fun () -> playGame cstream tiles (State.mkState board dict playerNumber handSet Map.empty Map.empty ((0,0): coord))
         
         

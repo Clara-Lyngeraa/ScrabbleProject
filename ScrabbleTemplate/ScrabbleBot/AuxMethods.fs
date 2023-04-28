@@ -17,12 +17,15 @@ module internal AuxMethods
     let UintFromInt (list:int list) =
         list |> List.map uint32
     
+    let charListToString (cl : char list) =
+        System.String.Concat(Array.ofList(cl))
     // Convert list of ids to list of chars:
     let HandToChar (hand: MultiSet<uint32>) (pieces: Map<uint32,tile>) =
-        printfn "%d" (size hand)
         let handIDList = toList hand
-        let getChar i = fst (Set.toList pieces[handIDList[i]]).[0]
-        List.map getChar (IntFromUint handIDList)
+        let getChar tile = fst (Set.toList (pieces[tile])).[0]
+        let test = List.map getChar handIDList
+        printfn "Our hand: %s" (charListToString test)
+        test
     
     let HandToIDs (hand: char list) = NotImplementedException
     
@@ -37,6 +40,5 @@ module internal AuxMethods
     let appendDict (charDicts: Dict list) (dict: Dict) =
         charDicts @ (dictAsList dict) 
     
-    let charListToString (cl : char list) =
-        System.String.Concat(Array.ofList(cl))
+
    
