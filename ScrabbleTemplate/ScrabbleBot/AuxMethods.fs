@@ -38,7 +38,8 @@ module internal AuxMethods
         word @ (charAsList hand[index])
     
     let appendDict (charDicts: Dict list) (dict: Dict) =
-        charDicts @ (dictAsList dict) 
+        charDicts @ (dictAsList dict)
+        
     
 
    

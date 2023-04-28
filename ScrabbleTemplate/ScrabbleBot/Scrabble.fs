@@ -93,71 +93,126 @@ module Scrabble =
  
 
     let tryBuildWord (pieces: Map<uint32,tile>) (st : State.state) = 
-        // let hand = HandToChar st.hand pieces 
+        let hand = HandToChar st.hand pieces 
         let word : char list = []
         let charDicts : Dict list = []
         let mutable traverseCount = 0
         
-        // BDFNUYY
-        let hand = ['B';'D';'F';'N';'U';'Y';'Y']
-        printfn "Our Hand: %s" (charListToString hand)
+        // let hand = ['D';'F';'H';'P';'R';'S';'T']
+        // printfn "Our Hand: %s" (charListToString hand)
         printfn ""
         
         let rec traverse (word : char list) (hand: char list) (dict: Dict) (charDicts: Dict list) handIndex stepIndex =
             printfn "%d" traverseCount
             traverseCount <- traverseCount + 1
-            match step hand[stepIndex] dict with
-            | None ->
-                printfn "None -> Index and hand.Length at top: %d %d" handIndex (hand.Length)
-                if handIndex < hand.Length
-                then traverse word hand dict charDicts (handIndex+1) stepIndex
-                else 
-                        printfn ""
-                        printfn "None -> Word before remove: %s" (charListToString word)
-                        let newWord = List.removeAt (word.Length-1) word
-                        
-                        printfn "None -> newWord after remove: %s" (charListToString newWord)
-                        printfn "None -> Hand before append: %s" (charListToString hand)
-                        let newHand = appendChar hand word (word.Length-1)
-                        printfn "None -> newHand after append: %s" (charListToString newHand)
-                        
-                        
-                        let charDictLength = charDicts.Length-1
-                        let newCharDicts = List.removeAt charDictLength charDicts
-                        let newCharDictLength = newCharDicts.Length-1
-
-                        
-                        printfn "None -> Index: %d" handIndex
-                        printfn ""
-                        
-                        if newWord.Length = 0
-                            then
-                                traverse newWord newHand st.dict newCharDicts (handIndex % hand.Length) (stepIndex + 1)
-                            else
-                                let newDict = newCharDicts[newCharDictLength]
-                                traverse newWord newHand newDict newCharDicts (handIndex % hand.Length) stepIndex
-                    
-            | Some (_,newDict) ->
-                
-                printfn "Some -> Index at top %d" handIndex
-                printfn ""
-                printfn "Some -> Word before append: %s" (charListToString word)
-                let newWord = appendChar word hand handIndex
-                printfn "Some -> newWord after append: %s" (charListToString newWord)
-                
-                printfn "Some -> Hand before remove: %s" (charListToString hand)
-                let newHand = List.removeAt handIndex hand
-                printfn "Some -> newHand after remove: %s" (charListToString newHand)
-                
-                let newCharDicts = appendDict charDicts newDict
-
-                
-                
-                if lookup (charListToString newWord) st.dict
+            if word.Length = 0
                 then
-                    printfn "Finished Word: %s" (charListToString newWord)
-                    newWord                
-                else traverse newWord newHand newDict newCharDicts handIndex stepIndex
+                    match step hand[stepIndex] dict with
+                    | None ->
+                        printfn "None -> Index and hand.Length at top: %d %d" handIndex (hand.Length)
+                        if handIndex < hand.Length
+                        then traverse word hand dict charDicts (handIndex+1) stepIndex
+                        else 
+                                printfn ""
+                                printfn "None -> Word before remove: %s" (charListToString word)
+                                let newWord = List.removeAt (word.Length-1) word
+                                
+                                printfn "None -> newWord after remove: %s" (charListToString newWord)
+                                printfn "None -> Hand before append: %s" (charListToString hand)
+                                let newHand = appendChar hand word (word.Length-1)
+                                printfn "None -> newHand after append: %s" (charListToString newHand)
+                                
+                                
+                                let charDictLength = charDicts.Length-1
+                                let newCharDicts = List.removeAt charDictLength charDicts
+                                let newCharDictLength = newCharDicts.Length-1
+        
+                                
+                                printfn "None -> Index: %d" handIndex
+                                printfn ""
+                                
+                                if newWord.Length = 0
+                                    then
+                                        traverse newWord newHand st.dict newCharDicts (handIndex  % hand.Length) (stepIndex + 1)
+                                    else
+                                        let newDict = newCharDicts[newCharDictLength]
+                                        traverse newWord newHand newDict newCharDicts (handIndex  % hand.Length) stepIndex
+                            
+                    | Some (_,newDict) ->
+                        
+                        printfn "Some -> Index at top %d" handIndex
+                        printfn ""
+                        printfn "Some -> Word before append: %s" (charListToString word)
+                        let newWord = appendChar word hand handIndex
+                        printfn "Some -> newWord after append: %s" (charListToString newWord)
+                        
+                        printfn "Some -> Hand before remove: %s" (charListToString hand)
+                        let newHand = List.removeAt handIndex hand
+                        printfn "Some -> newHand after remove: %s" (charListToString newHand)
+                        
+                        let newCharDicts = appendDict charDicts newDict
+        
+                        
+                        
+                        if lookup (charListToString newWord) st.dict
+                        then
+                            printfn "Finished Word: %s" (charListToString newWord)
+                            newWord                
+                        else traverse newWord newHand newDict newCharDicts 0 stepIndex
+                
+                else 
+                    match step hand[0] dict with
+                    | None ->
+                        printfn "None -> Index and hand.Length at top: %d %d" handIndex (hand.Length)
+                        if handIndex < hand.Length
+                        then traverse word hand dict charDicts (handIndex+1) stepIndex
+                        else 
+                                printfn ""
+                                printfn "None -> Word before remove: %s" (charListToString word)
+                                let newWord = List.removeAt (word.Length-1) word
+                                
+                                printfn "None -> newWord after remove: %s" (charListToString newWord)
+                                printfn "None -> Hand before append: %s" (charListToString hand)
+                                let newHand = appendChar hand word (word.Length-1)
+                                printfn "None -> newHand after append: %s" (charListToString newHand)
+                                
+                                
+                                let charDictLength = charDicts.Length-1
+                                let newCharDicts = List.removeAt charDictLength charDicts
+                                let newCharDictLength = newCharDicts.Length-1
+        
+                                
+                                printfn "None -> Index: %d" handIndex
+                                printfn ""
+                                
+                                if newWord.Length = 0
+                                    then
+                                        traverse newWord newHand st.dict newCharDicts (handIndex % hand.Length) (stepIndex + 1)
+                                    else
+                                        let newDict = newCharDicts[newCharDictLength]
+                                        traverse newWord newHand newDict newCharDicts (handIndex % hand.Length) stepIndex
+                            
+                    | Some (_,newDict) ->
+                        
+                        printfn "Some -> Index at top %d" handIndex
+                        printfn ""
+                        printfn "Some -> Word before append: %s" (charListToString word)
+                        let newWord = appendChar word hand handIndex
+                        printfn "Some -> newWord after append: %s" (charListToString newWord)
+                        
+                        printfn "Some -> Hand before remove: %s" (charListToString hand)
+                        let newHand = List.removeAt handIndex hand
+                        printfn "Some -> newHand after remove: %s" (charListToString newHand)
+                        
+                        let newCharDicts = appendDict charDicts newDict
+        
+                        
+                        
+                        if lookup (charListToString newWord) st.dict
+                        then
+                            printfn "Finished Word: %s" (charListToString newWord)
+                            newWord                
+                        else traverse newWord newHand newDict newCharDicts 0 stepIndex
         
         printfn "Index at beginning: %d" 0
         traverse word hand st.dict charDicts 0 0
