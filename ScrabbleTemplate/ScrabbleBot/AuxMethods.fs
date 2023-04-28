@@ -19,6 +19,7 @@ module internal AuxMethods
     
     // Convert list of ids to list of chars:
     let HandToChar (hand: MultiSet<uint32>) (pieces: Map<uint32,tile>) =
+        printfn "%d" (size hand)
         let handIDList = toList hand
         let getChar i = fst (Set.toList pieces[handIDList[i]]).[0]
         List.map getChar (IntFromUint handIDList)

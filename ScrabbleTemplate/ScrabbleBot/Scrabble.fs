@@ -61,10 +61,9 @@ module State =
         playerNumber = pn; 
         hand = h; 
         anchor = (0u,0u); 
-        boardState =bs; 
+        boardState = bs; 
         squaresUsed = used; 
-        lastTilePlaced = 
-        lastTile
+        lastTilePlaced = lastTile;
     } 
     
 
@@ -95,12 +94,12 @@ module Scrabble =
  
 
     let tryBuildWord (pieces: Map<uint32,tile>) (st : State.state) = 
-        // let hand = HandToChar st.hand pieces
+        let hand = HandToChar st.hand pieces 
         let word : char list = []
         let charDicts : Dict list = []
         let fuckedCounter = -1
         
-        let hand = ['P';'L';'X';'A';'Z';'Y']
+        // let hand = ['P';'L';'X';'A';'Z';'Y']
         
         let rec traverse (word : char list) (hand: char list) (dict: Dict) (charDicts: Dict list) index =
             
@@ -134,7 +133,7 @@ module Scrabble =
                 let newCharDicts = appendDict charDicts newDict
                 
                 
-                if lookup "HI" st.dict
+                if lookup (charListToString newWord) st.dict
                 then
                     printfn "Is word %b" isWord
                     printfn "Finished Word: skrrrt %s" (charListToString newWord)
@@ -165,7 +164,9 @@ module Scrabble =
             // remove the force print when you move on from manual input (or when you have learnt the format)
             // forcePrint "Input move (format '(<x-coordinate> <y-coordinate> <piece id><character><point-value> )*', note the absence of space between the last inputs)\n\n"
             // let input =  System.Console.ReadLine()
-            
+            printfn "aux before"
+            let y = charListToString (HandToChar st.hand pieces)
+            printfn "%s" y
             let x = tryBuildWord pieces st
             printfn "%s" (charListToString x)
 
@@ -230,8 +231,12 @@ module Scrabble =
         //let dict = dictf true // Uncomment if using a gaddag for your dictionary
         let dict = dictf false // Uncomment if using a trie for your dictionary
         let board = Parser.mkBoard boardP
-                  
+        
+        let testHand = List.length hand
+        printfn "testHand: %d" testHand
         let handSet = List.fold (fun acc (x, k) -> MultiSet.add x k acc) MultiSet.empty hand
+        let testHandSet = MultiSet.size handSet
+        printfn "testHandSet: %d" testHandSet
 
         fun () -> playGame cstream tiles (State.mkState board dict playerNumber handSet Map.empty Map.empty (0,0))
         
