@@ -50,15 +50,31 @@ module State =
         playerNumber  : uint32
         hand          : MultiSet.MultiSet<uint32>
         anchor        : uint32 * uint32
+        boardState    : Map<coord, char * int>
+        squaresUsed   : Map<coord, uint32>
+        lastTilePlaced : coord
     }
 
-    let mkState b d pn h = {board = b; dict = d;  playerNumber = pn; hand = h; anchor = (0u,0u) }
+    let mkState b d pn h bs used lastTile = {
+        board = b; 
+        dict = d;  
+        playerNumber = pn; 
+        hand = h; 
+        anchor = (0u,0u); 
+        boardState =bs; 
+        squaresUsed = used; 
+        lastTilePlaced = 
+        lastTile
+    } 
+    
 
     let board st         = st.board
     let dict st          = st.dict
     let playerNumber st  = st.playerNumber
     let hand st          = st.hand
 
+
+    
 module Scrabble =
     open System.Threading
     // Figure out what move to make:
@@ -128,6 +144,19 @@ module Scrabble =
         traverse word hand st.dict charDicts 0
 
         
+   
+    let firstLetter (st: State.state) =
+        match st.boardState.TryFind st.lastTilePlaced with //st.lastTilePlaced
+       | Some s -> fst s
+       | None -> ' '
+    
+    let isHorizontal (st: State.state) =
+        let anchor = st.lastTilePlaced
+        match (st.boardState.TryFind ((fst anchor)-1, snd anchor)) with
+        | Some s -> true
+        | None -> false
+        
+    let removeHand (st: State.state) = List.fold (fun acc elem -> MultiSet.removeSingle elem acc) st.hand (MultiSet.toList st.hand)   
     let playGame cstream pieces (st : State.state) =
         
         let rec aux (st : State.state) =
@@ -157,11 +186,16 @@ module Scrabble =
 
             match msg with
             | RCM (CMPlaySuccess(ms, points, newPieces)) ->
-                (* Successful play by you. Update your state (remove old tiles, add the new ones, change turn, etc) *)
-                let st' = st // This state needs to be updated
+                let removeFromHand = List.fold (fun acc elem -> MultiSet.removeSingle (fst(snd (elem))) acc) st.hand ms
+                let addToHand = List.fold (fun acc elem -> MultiSet.add (fst elem) (snd elem) acc) removeFromHand newPieces
+        
+                let newBoardState = Map.add (0,0) ('a',0)  st.boardState
+                let lastTile = firstLetter st
+                let st' = st // This state needs to be updated mkstate -> newLastTile
                 aux st'
             | RCM (CMPlayed (pid, ms, points)) ->
                 (* Successful play by other player. Update your state *)
+                //newBoardState
                 let st' = st // This state needs to be updated
                 aux st'
             | RCM (CMPlayFailed (pid, ms)) ->
@@ -199,5 +233,6 @@ module Scrabble =
                   
         let handSet = List.fold (fun acc (x, k) -> MultiSet.add x k acc) MultiSet.empty hand
 
-        fun () -> playGame cstream tiles (State.mkState board dict playerNumber handSet)
+        fun () -> playGame cstream tiles (State.mkState board dict playerNumber handSet Map.empty Map.empty (0,0))
+        
         
