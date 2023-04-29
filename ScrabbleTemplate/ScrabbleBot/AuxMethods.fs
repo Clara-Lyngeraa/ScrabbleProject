@@ -37,6 +37,9 @@ module internal AuxMethods
     let appendChar word (hand: char list) index =
         word @ (charAsList hand[index])
     
+    let appendCharToHand hand (word: char list) index =
+        hand @ (charAsList word[index])
+    
     let appendDict (charDicts: Dict list) (dict: Dict) =
         charDicts @ (dictAsList dict)
         
