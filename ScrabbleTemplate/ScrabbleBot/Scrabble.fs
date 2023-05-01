@@ -79,11 +79,12 @@ module Scrabble =
         // let hand = HandToChar st.hand pieces 
         let word : char list = []
         let charDicts : Dict list = []
+        let deadEndWords : string list = []
         
         let hand = ['D';'F';'H';'O';'R';'S';'T']
         printfn "Our Hand: %s" (charListToString hand)
 
-        WordBuilder.traverseZero word hand st.dict charDicts 0 0 st.dict
+        WordBuilder.traverseZero word hand st.dict charDicts 0 0 st.dict deadEndWords
 
         
    

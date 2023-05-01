@@ -34,6 +34,9 @@ module internal AuxMethods
    
     let dictAsList (d:Dict) =
         d :: []
+    
+    let stringAsList (s: string) =
+        s :: []
     let appendChar word (hand: char list) index =
         word @ (charAsList hand[index])
     
@@ -42,6 +45,9 @@ module internal AuxMethods
     
     let appendDict (charDicts: Dict list) (dict: Dict) =
         charDicts @ (dictAsList dict)
+        
+    let appendStringToList (s: string) (list: string list) =
+        list @ (stringAsList s)
         
     
 
