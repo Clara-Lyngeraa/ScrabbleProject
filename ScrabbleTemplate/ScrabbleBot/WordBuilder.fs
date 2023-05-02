@@ -5,45 +5,57 @@ module internal WordBuilder
     open Dictionary
     open AuxMethods
     
-    let rec checkChar
+    let rec stepChar
         (c: char)
-        (words : (char list) list)
+        (currentWord: char list)
+        (words : char list list)
         (hand: char list) 
-        (dict: Dict) =
+        (dict: Dict)
+        =
             match step c dict with
-            | Some (bool, newDict) ->
-                if bool
-                then words
-                else
-                    
-                    printfn ""
-                    printfn "Some -> Word before append: %s" (charListToString words)
-                    
-                    let newWords = appendCharToWord words c
-                    printfn "Some -> newWord after append: %s" (charListToString newWord)
-                    
-                    printfn "Some -> Hand before remove: %s" (charListToString hand)
-                    
+            | Some (thisIsAWord, newDict) ->
+                printfn     "                                   "
+                printfn     "Some:                              "
+                if thisIsAWord
+                then
+                    let newCurrentWord = appendCharToWord currentWord c
+                    let newWords = newCurrentWord :: words
                     let newHand = removeCharHand hand c
-                    printfn "Some -> newHand after remove: %s" (charListToString newHand)
                     
+                    printfn "   IfThen:                         "
+                    printfn "        This is a word: %s         " (charListToString newCurrentWord)
                     
-                    // 
-                    tryBuildWord c newWord newHand newDict
+                    traverseDict newCurrentWord newWords newHand newDict
+                else
+                    let newCurrentWord = appendCharToWord currentWord c
+                    let newHand = removeCharHand hand c
+
+                    printfn "   Else:                           "
+                    printfn "        Word before append: %s     " (charListToString currentWord)
+                    printfn "        newWord after append: %s   " (charListToString newCurrentWord)
+                    printfn "        Hand before remove: %s     " (charListToString hand)
+                    printfn "        newHand after remove: %s   " (charListToString newHand)
                     
-            | None -> word
-        
-    and checkDict =
-        
-        (hand: char list) 
-        (dict: Dict) =
+                    traverseDict newCurrentWord words newHand newDict
+                    
+            | None ->
+                printfn     "None:                              "
+                words
     
-    and tryBuildWord
-        (c: char)
-        (word : char list)
+    and traverseDict
+        (currentWord : char list)
+        (words: char list list)
         (hand: char list) 
         (dict: Dict) =
-            List.fold (fun acc x -> checkChar x acc hand dict) word hand
+            List.fold (fun (acc : char list list) c -> stepChar c currentWord acc hand dict) words hand
+    
+    let rec playTheVeryFirstWord
+        (currentWord: char list)
+        (words : char list list)
+        (hand: char list) 
+        (dict: Dict)
+        =
+            traverseDict currentWord words hand dict
             
             
             

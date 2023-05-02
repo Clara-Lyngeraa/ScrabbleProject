@@ -91,10 +91,12 @@ module Scrabble =
     
     let tryBuildWord (pieces: Map<uint32,tile>) (st : State.state) = 
         // let hand = HandToChar st.hand pieces 
-        let word : char list = []
+        let currentWord : char list = []
+        let words : char list list = []
         let hand = ['F';'H';'O';'R';'S';'T']
+        
         printfn "Our Hand: %s" (charListToString hand)
-        WordBuilder.tryBuildWord 'D' word hand st.dict
+        WordBuilder.stepChar 'D' currentWord words hand st.dict
     
     
     let playGame cstream pieces (st : State.state) =

@@ -54,6 +54,9 @@ module internal AuxMethods
         
     let appendStringToList (s: string) (list: string list) =
         list @ (stringAsList s)
+    
+    let appendWordToWords (word: char list) (wordList: char list list) =
+        word :: wordList
         
     
 
