@@ -1,6 +1,5 @@
 module internal WordBuilder
 
-    open System.Threading
     open ScrabbleUtil
     open Dictionary
     open AuxMethods
@@ -54,8 +53,7 @@ module internal WordBuilder
         (words : char list list)
         (hand: char list) 
         (dict: Dict)
-        =
-            traverseDict currentWord words hand dict
+        = traverseDict currentWord words hand dict
             
             
             

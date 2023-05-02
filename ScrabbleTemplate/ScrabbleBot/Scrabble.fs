@@ -53,16 +53,18 @@ module State =
         boardState    : Map<coord, char * int>
         squaresUsed   : Map<coord, uint32>
         lastTilePlaced : coord
+        thisIsTheVeryFirstWord : bool
     }
 
-    let mkState b d pn h bs used lastTile = {
+    let mkState b d pn h bs used lastTile fw = {
         board = b; 
         dict = d;  
         playerNumber = pn; 
         hand = h; 
         boardState = bs; 
         squaresUsed = used; 
-        lastTilePlaced = lastTile;
+        lastTilePlaced = lastTile
+        thisIsTheVeryFirstWord = fw
     } 
     
 
@@ -74,8 +76,7 @@ module State =
 
     
 module Scrabble =
-        
-   
+
     let firstLetter (st: State.state) =
         match st.boardState.TryFind st.lastTilePlaced with //st.lastTilePlaced
        | Some s -> fst s
@@ -95,8 +96,19 @@ module Scrabble =
         let words : char list list = []
         let hand = ['F';'H';'O';'R';'S';'T']
         
-        printfn "Our Hand: %s" (charListToString hand)
-        WordBuilder.stepChar 'D' currentWord words hand st.dict
+        let foundWords = 
+            if st.thisIsTheVeryFirstWord
+                then
+                    st.thisIsTheVeryFirstWord = false // This wouldn't work, need mkState
+                    WordBuilder.playTheVeryFirstWord currentWord words hand st.dict
+                else
+                    printfn "Our Hand: %s" (charListToString hand)
+                    WordBuilder.stepChar 'D' currentWord words hand st.dict // Fold over list of anchorpoints instead of D
+        for charlist in foundWords
+            do
+                printfn "Word in list: %s" (charListToString charlist)
+        
+        foundWords
     
     
     let playGame cstream pieces (st : State.state) =
@@ -169,6 +181,6 @@ module Scrabble =
         let board = Parser.mkBoard boardP
         let handSet = List.fold (fun acc (x, k) -> MultiSet.add x k acc) MultiSet.empty hand
     
-        fun () -> playGame cstream tiles (State.mkState board dict playerNumber handSet Map.empty Map.empty ((0,0): coord))
+        fun () -> playGame cstream tiles (State.mkState board dict playerNumber handSet Map.empty Map.empty ((0,0): coord) true)
         
         
