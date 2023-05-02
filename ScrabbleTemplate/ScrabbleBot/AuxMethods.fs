@@ -37,8 +37,14 @@ module internal AuxMethods
     
     let stringAsList (s: string) =
         s :: []
-    let appendChar word (hand: char list) index =
-        word @ (charAsList hand[index])
+        
+     
+    let appendCharToWord word char =
+        word @ (charAsList char)
+    
+    let removeCharHand (hand: char list) char =
+        let charToRemove = charAsList char
+        List.except charToRemove hand
     
     let appendCharToHand hand (word: char list) index =
         hand @ (charAsList word[index])

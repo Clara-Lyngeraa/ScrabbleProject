@@ -74,18 +74,6 @@ module State =
 
     
 module Scrabble =
-
-    let tryBuildWord (pieces: Map<uint32,tile>) (st : State.state) = 
-        // let hand = HandToChar st.hand pieces 
-        let word : char list = []
-        let charDicts : Dict list = []
-        let deadEndWords : string list = []
-        
-        let hand = ['D';'F';'H';'O';'R';'S';'T']
-        printfn "Our Hand: %s" (charListToString hand)
-
-        WordBuilder.traverseZero word hand st.dict charDicts 0 0 st.dict deadEndWords
-
         
    
     let firstLetter (st: State.state) =
@@ -100,6 +88,15 @@ module Scrabble =
         | None -> false
         
     let removeHand (st: State.state) = List.fold (fun acc elem -> MultiSet.removeSingle elem acc) st.hand (MultiSet.toList st.hand)   
+    
+    let tryBuildWord (pieces: Map<uint32,tile>) (st : State.state) = 
+        // let hand = HandToChar st.hand pieces 
+        let word : char list = []
+        let hand = ['F';'H';'O';'R';'S';'T']
+        printfn "Our Hand: %s" (charListToString hand)
+        WordBuilder.tryBuildWord 'D' word hand st.dict
+    
+    
     let playGame cstream pieces (st : State.state) =
         
         let rec aux (st : State.state) =
