@@ -58,6 +58,13 @@ module internal AuxMethods
     let appendWordToWords (word: char list) (wordList: char list list) =
         word :: wordList
         
+    let rec findLongestWord list x =
+        let longestWordList = List.filter (fun cl -> List.length cl = x) list
+        if (List.length longestWordList) > 0
+            then longestWordList
+            else
+                findLongestWord list (x-1)
+        
     
 
    

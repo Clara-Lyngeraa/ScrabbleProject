@@ -91,10 +91,10 @@ module Scrabble =
     let removeHand (st: State.state) = List.fold (fun acc elem -> MultiSet.removeSingle elem acc) st.hand (MultiSet.toList st.hand)   
     
     let tryBuildWord (pieces: Map<uint32,tile>) (st : State.state) = 
-        // let hand = HandToChar st.hand pieces 
+        let hand = HandToChar st.hand pieces 
         let currentWord : char list = []
         let words : char list list = []
-        let hand = ['F';'H';'O';'R';'S';'T']
+        // let hand = ['F';'H';'O';'R';'S';'T']
         
         let foundWords = 
             if st.thisIsTheVeryFirstWord
@@ -105,6 +105,13 @@ module Scrabble =
                     printfn "Our Hand: %s" (charListToString hand)
                     WordBuilder.stepChar 'D' currentWord words hand st.dict // Fold over list of anchorpoints instead of D
         for charlist in foundWords
+            do
+                printfn "Word in list: %s" (charListToString charlist)
+        
+        printfn ""
+        printfn "Longest Words:"
+        printfn ""
+        for charlist in (findLongestWord foundWords 7)
             do
                 printfn "Word in list: %s" (charListToString charlist)
         
