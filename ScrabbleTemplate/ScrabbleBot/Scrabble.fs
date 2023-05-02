@@ -75,6 +75,8 @@ module State =
     let hand st          = st.hand
     
     
+    
+    
 
 
     
@@ -111,6 +113,8 @@ module Scrabble =
         printfn ""
         printfn "The first in the list of longest words: %s" (charListToString ((findLongestWord foundWords 8)[0]))
         printfn ""
+        
+        convertCharList ((findLongestWord foundWords 8)[0]) pieces // Debug line, outcomment
         
         (findLongestWord foundWords 8)[0]
     
@@ -192,7 +196,7 @@ module Scrabble =
 
         //let dict = dictf true // Uncomment if using a gaddag for your dictionary
         let dict = dictf false // Uncomment if using a trie for your dictionary
-        let board = Parser.mkBoard boardP
+        let board = mkBoard boardP
         let handSet = List.fold (fun acc (x, k) -> MultiSet.add x k acc) MultiSet.empty hand
     
         fun () -> playGame cstream tiles (State.mkState board dict playerNumber handSet Map.empty Map.empty ((0,0): coord) true)
