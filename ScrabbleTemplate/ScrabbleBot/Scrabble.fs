@@ -73,6 +73,8 @@ module State =
     let dict st          = st.dict
     let playerNumber st  = st.playerNumber
     let hand st          = st.hand
+    
+    
 
 
     
@@ -125,7 +127,7 @@ module Scrabble =
 
             let x = tryBuildWord pieces st
 
-            
+            let move = SMForfeit
                 
             Print.printHand pieces (State.hand st)
             debugPrint (sprintf "Player %d -> Server:\n%A\n" (State.playerNumber st) move) // keep the debug lines. They are useful.
@@ -150,7 +152,7 @@ module Scrabble =
                     | (x,y) when x <> fst  st.lastTilePlaced -> ((x,y): coord), isHorizontal st = true
                     | (x,y) when y <> snd  st.lastTilePlaced -> ((x,y): coord), isHorizontal st = false
 
-                let st' = State.mkState st.board st.dict st.playerNumber addedToHand newBoardState newSquaresUsed (fst lastTile) // This state needs to be updated mkstate -> newLastTile
+                let st' = State.mkState st.board st.dict st.playerNumber addedToHand newBoardState newSquaresUsed (fst lastTile) false // This state needs to be updated mkstate -> newLastTile
                 
                 aux st'
             | RCM (CMPlayed (pid, ms, points)) ->
@@ -161,7 +163,7 @@ module Scrabble =
             | RCM (CMPlayFailed (pid, ms)) ->
                 (* Failed play. Update your state *)
                 let newBoardState = List.fold(fun acc (coord,(_, (x,y))) -> Map.add coord (x,y) acc ) st.boardState ms
-                let st' = State.mkState st.board st.dict st.playerNumber st.hand newBoardState st.squaresUsed st.lastTilePlaced
+                let st' = State.mkState st.board st.dict st.playerNumber st.hand newBoardState st.squaresUsed st.lastTilePlaced false 
                 aux st'
             | RCM (CMGameOver _) -> ()
             | RCM a -> failwith (sprintf "not implmented: %A" a)
