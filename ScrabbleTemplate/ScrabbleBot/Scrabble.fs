@@ -104,18 +104,12 @@ module Scrabble =
                 else
                     printfn "Our Hand: %s" (charListToString hand)
                     WordBuilder.stepChar 'D' currentWord words hand st.dict // Fold over list of anchorpoints instead of D
-        for charlist in foundWords
-            do
-                printfn "Word in list: %s" (charListToString charlist)
         
         printfn ""
-        printfn "Longest Words:"
+        printfn "The first in the list of longest words: %s" (charListToString ((findLongestWord foundWords 8)[0]))
         printfn ""
-        for charlist in (findLongestWord foundWords 7)
-            do
-                printfn "Word in list: %s" (charListToString charlist)
         
-        foundWords
+        (findLongestWord foundWords 8)[0]
     
     
     let playGame cstream pieces (st : State.state) =
