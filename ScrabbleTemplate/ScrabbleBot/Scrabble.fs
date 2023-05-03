@@ -38,9 +38,10 @@ module State =
         anchorPoint : coord
         nextWordIsHorizontal : bool
         thisIsTheVeryFirstWord : bool
+        middleAnchors : List<coord * bool>
     }
 
-    let mkState b d pn h bs used pieces anchorPoint isHoriz fw = {
+    let mkState b d pn h bs used pieces anchorPoint isHoriz fw anchors = {
         board = b; 
         dict = d;  
         playerNumber = pn; 
@@ -51,6 +52,7 @@ module State =
         anchorPoint = anchorPoint
         nextWordIsHorizontal = isHoriz
         thisIsTheVeryFirstWord = fw
+        middleAnchors = anchors
     } 
     
 
@@ -97,11 +99,11 @@ module Scrabble =
                     WordBuilder.stepChar uintToBeginWith currentWord words hand st.dict // Fold over list of anchorpoints instead of D
         
 
-        if ((findLongestWord foundWords 8)).IsEmpty
+        if (findLongestWord foundWords 8).IsEmpty
             then
                 []
             else
-                convertUIntList ((findLongestWord foundWords 8)[0]) pieces st.nextWordIsHorizontal st.anchorPoint st.thisIsTheVeryFirstWord// Debug line, outcomment
+                convertUIntList ((findLongestWord foundWords 8)[0]) pieces st.nextWordIsHorizontal st.anchorPoint st.thisIsTheVeryFirstWord
 
 
         
@@ -187,13 +189,8 @@ module Scrabble =
             | RCM (CMGameOver _) -> ()
             | RCM a -> failwith (sprintf "not implmented: %A" a)
             | RGPE err -> 
-                printfn "Gameplay Error:\n%A" err
-                match err[0] with
-                | GPENotEnoughPieces (changeTiles, availableTiles) ->
-                    let tilesToRemove = removeXTilesFromHand st.hand (changeTiles-availableTiles)
-                    SMChange tilesToRemove
-                    aux st
-                    
+                printfn "Gameplay Error:\n%A" err; aux st
+                
                 (*
                     Her skal vin håndtere når vores ord fejler
                     burde ikke være et problem vi får eftersom det kun er hvis det ikke er muligt at skrive ord

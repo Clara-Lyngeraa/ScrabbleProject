@@ -267,6 +267,10 @@ module internal AuxMethods
             | 0u -> handList
             | _ -> removeUintHand handList 0u
         aux amount
+    
+    let appendAnchor (list: List<coord * bool>) anchor nextWordIsHorizontal =
+        let toBeAdded = (anchor, nextWordIsHorizontal)
+        toBeAdded :: list
         
     
 
