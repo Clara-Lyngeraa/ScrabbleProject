@@ -194,11 +194,16 @@ module internal AuxMethods
         word :: wordList
         
     let rec findLongestWord list x =
-        let longestWordList = List.filter (fun cl -> List.length cl = x) list
-        if (List.length longestWordList) > 0
-            then longestWordList
-            else
-                findLongestWord list (x-1)
+        
+        if List.isEmpty list
+        then
+            List.Empty
+        else
+            let longestWordList = List.filter (fun cl -> List.length cl = x) list
+            if (List.length longestWordList) > 0
+                then longestWordList
+                else
+                    findLongestWord list (x-1)
     
     // Desired format:
     // char list -> (coord * (uint32 * (char * int))) list

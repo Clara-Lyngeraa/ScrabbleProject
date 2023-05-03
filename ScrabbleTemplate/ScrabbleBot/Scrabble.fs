@@ -97,11 +97,22 @@ module Scrabble =
                     WordBuilder.stepChar uintToBeginWith currentWord words hand st.dict // Fold over list of anchorpoints instead of D
         
         
-        printfn ""
+        (*printfn ""
         printList ((findLongestWord foundWords 8)[0])
         printfn ""
-        
-        convertUIntList ((findLongestWord foundWords 8)[0]) pieces st.nextWordIsHorizontal st.anchorPoint st.thisIsTheVeryFirstWord// Debug line, outcomment
+        *)
+        if ((findLongestWord foundWords 8)).IsEmpty
+            then
+                printfn "vi skal swapppe tiiiiiiles"
+                printfn "vi skal swapppe tiiiiiiles"
+                printfn "vi skal swapppe tiiiiiiles"
+                printfn "vi skal swapppe tiiiiiiles"
+                printfn "vi skal swapppe tiiiiiiles"
+                printfn "vi skal swapppe tiiiiiiles"
+                convertUIntList ((findLongestWord foundWords 8)[0]) pieces st.nextWordIsHorizontal st.anchorPoint st.thisIsTheVeryFirstWord// Debug line, outcomment
+            else
+                printfn "skrrrrrrt2"
+                convertUIntList ((findLongestWord foundWords 8)[0]) pieces st.nextWordIsHorizontal st.anchorPoint st.thisIsTheVeryFirstWord// Debug line, outcomment
         
         //(findLongestWord foundWords 8)[0]
         //smus tester coordinate prints
@@ -132,7 +143,7 @@ module Scrabble =
             printfn "%s" x 
             printfn "skrrrrrrt response message ends here" 
             
-            debugPrint (sprintf "Player %d <- Server:\n%A\n" (State.playerNumber st) move) // keep the debug lines. They are useful.
+            //debugPrint (sprintf "Player %d <- Server:\n%A\n" (State.playerNumber st) move) // keep the debug lines. They are useful.
             
             (*
                 i have made a method "getNewANchorPoints" that retunrs the coordinate of the last letter formerly played
@@ -142,26 +153,32 @@ module Scrabble =
             
             match msg with
             | RCM (CMPlaySuccess(ms, points, newPieces)) ->
-
+                
+                printfn "started matching CMPLAYSUCCES msg0"
                 let removeFromHand = List.fold (fun acc elem -> MultiSet.removeSingle (fst(snd elem)) acc) st.hand ms
                 let addedToHand = List.fold (fun acc elem -> MultiSet.add (fst elem) (snd elem) acc) removeFromHand newPieces
-                    
+                
+                printfn "started matching CMPLAYSUCCES msg1"
                 let newBoardState = List.fold(fun acc (coord,(_, (x,y))) -> Map.add coord (x,y) acc ) st.boardState ms //Map.add (0,0) ('a',0)  st.boardState
                 let newSquaresUsed = List.fold (fun acc (coord,(int, _)) -> Map.add coord int acc) st.squaresUsed ms
                 
+                printfn "started matching CMPLAYSUCCES msg2"
                 let newAnchorPoint = getNewAnchorPoint wordListToSend
                 
+                printfn "started matching CMPLAYSUCCES msg3"
                 
                 let lastTile =
                     match fst (List.last ms) with
                     | (x,y) when x <> fst  st.anchorPoint -> ((x,y): coord), false
                     | (x,y) when y <> snd  st.anchorPoint -> ((x,y): coord), true
                    // | (x,y) when x = fst st.anchorPoint && y = snd st.anchorPoint -> ((x,y): coord), false
-                
+                printfn "started matching CMPLAYSUCCES msg4"
 
                 let st' = State.mkState st.board st.dict st.playerNumber addedToHand newBoardState newSquaresUsed st.pieces newAnchorPoint (snd lastTile) false // This state needs to be updated mkstate -> newLastTile
                 
+                printfn "started matching CMPLAYSUCCES msg5"
                 aux st'
+                
             | RCM (CMPlayed (pid, ms, points)) ->
                 (* Successful play by other player. Update your state *)
                 //newBoardState
@@ -169,12 +186,13 @@ module Scrabble =
                 aux st'
             | RCM (CMPlayFailed (pid, ms)) ->
                 (* Failed play. Update your state *)
+                printfn "received CMPLAYFAILED MSG"
                 let newBoardState = List.fold(fun acc (coord,(_, (x,y))) -> Map.add coord (x,y) acc ) st.boardState ms
                 let st' = State.mkState st.board st.dict st.playerNumber st.hand newBoardState st.squaresUsed st.pieces st.anchorPoint st.nextWordIsHorizontal false 
                 aux st'
             | RCM (CMGameOver _) -> ()
             | RCM a -> failwith (sprintf "not implmented: %A" a)
-            | RGPE err ->
+            | RGPE err -> 
                 printfn "Gameplay Error:\n%A" err; aux st
                 (*
                     Her skal vin håndtere når vores ord fejler
