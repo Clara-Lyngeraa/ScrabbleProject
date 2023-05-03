@@ -5,53 +5,41 @@ module internal WordBuilder
     open AuxMethods
     
     let rec stepChar
-        (c: char)
-        (currentWord: char list)
-        (words : char list list)
-        (hand: char list) 
+        (u: uint32)
+        (currentWord: uint32 list)
+        (words : uint32 list list)
+        (hand: uint32 list) 
         (dict: Dict)
         =
-            match step c dict with
+            match step (translate u) dict with
             | Some (thisIsAWord, newDict) ->
-                (*printfn     "                                   "
-                printfn     "Some:                              "*)
                 if thisIsAWord
                 then
-                    let newCurrentWord = appendCharToWord currentWord c
+                    let newCurrentWord = appendUIntToWord currentWord u
                     let newWords = newCurrentWord :: words
-                    let newHand = removeCharHand hand c
-                    
-                    (*printfn "   IfThen:                         "
-                    printfn "        This is a word: %s         " (charListToString newCurrentWord)*)
+                    let newHand = removeUintHand hand u
                     
                     traverseDict newCurrentWord newWords newHand newDict
                 else
-                    let newCurrentWord = appendCharToWord currentWord c
-                    let newHand = removeCharHand hand c
-
-                    (*printfn "   Else:                           "
-                    printfn "        Word before append: %s     " (charListToString currentWord)
-                    printfn "        newWord after append: %s   " (charListToString newCurrentWord)
-                    printfn "        Hand before remove: %s     " (charListToString hand)
-                    printfn "        newHand after remove: %s   " (charListToString newHand)*)
+                    let newCurrentWord = appendUIntToWord currentWord u
+                    let newHand = removeUintHand hand u
                     
                     traverseDict newCurrentWord words newHand newDict
                     
             | None ->
-                // printfn     "None:                              "
                 words
     
     and traverseDict
-        (currentWord : char list)
-        (words: char list list)
-        (hand: char list) 
+        (currentWord : uint32 list)
+        (words: uint32 list list)
+        (hand: uint32 list) 
         (dict: Dict) =
-            List.fold (fun (acc : char list list) c -> stepChar c currentWord acc hand dict) words hand
+            List.fold (fun (acc : uint32 list list) c -> stepChar c currentWord acc hand dict) words hand
     
     let rec playTheVeryFirstWord
-        (currentWord: char list)
-        (words : char list list)
-        (hand: char list) 
+        (currentWord: uint32 list)
+        (words : uint32 list list)
+        (hand: uint32 list) 
         (dict: Dict)
         = traverseDict currentWord words hand dict
             

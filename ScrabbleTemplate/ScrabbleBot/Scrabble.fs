@@ -27,7 +27,7 @@ module State =
     // information, such as number of players, player turn, etc.
 
     type state = {
-        board         : Parser.board
+        board         : board
         dict          : Dict
         playerNumber  : uint32
         hand          : MultiSet.MultiSet<uint32>
@@ -64,11 +64,6 @@ module Scrabble =
     
     let setCoordsForVertical (word : (uint32 * (char * int)) list ) (y : int)  =
         List.fold (fun acc a ->  acc  @ [matchCoord ( (findIndex word a) , y) a ]) List.Empty word
-        
-    let firstLetter (st: State.state) =
-        match st.boardState.TryFind (st.anchorPoint) with //st.lastTilePlaced
-       | Some s -> fst s
-       | None -> ' '
     
     let isHorizontal (st: State.state) =
         let anchor = st.anchorPoint
@@ -80,9 +75,10 @@ module Scrabble =
     
     let tryBuildWord (pieces: Map<uint32,tile>) (st : State.state) = 
     //let tryBuildWord (pieces: Map<uint32,tile>) (st : State.state) (anchorPoint: (int * int)) = 
-        let hand = HandToChar st.hand pieces 
-        let currentWord : char list = []
-        let words : char list list = []
+        // let hand = HandToChar st.hand pieces
+        let hand = handToIDList st.hand
+        let currentWord : uint32 list = []
+        let words : uint32 list list = []
         // let hand = ['F';'H';'O';'R';'S';'T']
         
         let foundWords = 
@@ -91,15 +87,13 @@ module Scrabble =
                     st.thisIsTheVeryFirstWord = false // This wouldn't work, need mkState
                     WordBuilder.playTheVeryFirstWord currentWord words hand st.dict
                 else
-                    printfn "Now trying to build the second word"
-                    printfn "Now trying to build the second word"
-                    printfn "Now trying to build the second word"
-                    printfn "Our Hand: %s" (charListToString hand)
-                    let charToBeginWith = fst(Map.find st.anchorPoint st.boardState) //should be able to 
-                    WordBuilder.stepChar charToBeginWith currentWord words hand st.dict // Fold over list of anchorpoints instead of D
+                    // printList hand
+                    //let uintToBeginWith = fst(Map.find st.anchorPoint st.boardState) //should be able to
+                    let test = Map.find st.anchorPoint st.squaresUsed 
+                    WordBuilder.stepChar test currentWord words hand st.dict // Fold over list of anchorpoints instead of D
         
         printfn ""
-        printfn "The first in the list of longest words: %s" (charListToString ((findLongestWord foundWords 8)[0]))
+        printList ((findLongestWord foundWords 8)[0])
         printfn ""
         
         convertCharList ((findLongestWord foundWords 8)[0]) pieces // Debug line, outcomment
@@ -144,17 +138,14 @@ module Scrabble =
             match msg with
             | RCM (CMPlaySuccess(ms, points, newPieces)) ->
 
-                let removeFromHand = List.fold (fun acc elem -> MultiSet.removeSingle (fst(snd (elem))) acc) st.hand ms
+                let removeFromHand = List.fold (fun acc elem -> MultiSet.removeSingle (fst(snd elem)) acc) st.hand ms
                 let addedToHand = List.fold (fun acc elem -> MultiSet.add (fst elem) (snd elem) acc) removeFromHand newPieces
                     
                 let newBoardState = List.fold(fun acc (coord,(_, (x,y))) -> Map.add coord (x,y) acc ) st.boardState ms //Map.add (0,0) ('a',0)  st.boardState
                 let newSquaresUsed = List.fold (fun acc (coord,(int, _)) -> Map.add coord int acc) st.squaresUsed ms
                 
                 let newAnchorPoint = getNewAnchorPoint wordListToSend
-                printfn " ---Attempt to make an anchorpoint %d ----- %d" (fst newAnchorPoint) (snd newAnchorPoint)
-                printfn " ---Attempt to make an anchorpoint %d ----- %d" (fst newAnchorPoint) (snd newAnchorPoint)
-                printfn " ---Attempt to make an anchorpoint %d ----- %d" (fst newAnchorPoint) (snd newAnchorPoint)
-                    
+                
                 
                 let st' = State.mkState st.board st.dict st.playerNumber addedToHand newBoardState newSquaresUsed newAnchorPoint false // This state needs to be updated mkstate -> newLastTile
                 
