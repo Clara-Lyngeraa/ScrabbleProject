@@ -118,6 +118,23 @@ module Scrabble =
 
             let word = tryBuildWord pieces st
             
+            let newMiddleAnchors =
+                if word.Length > 3
+                then
+                    if st.nextWordIsHorizontal
+                    then
+                        let newCoord = ( (fst (st.anchorPoint) + 2), snd (st.anchorPoint) )
+                        appendAnchor st.middleAnchors newCoord st.nextWordIsHorizontal
+
+                    else
+                        let newCoord = ( (fst st.anchorPoint), ((snd (st.anchorPoint) )-2 ))
+                        appendAnchor st.middleAnchors newCoord st.nextWordIsHorizontal
+                else
+                    st.middleAnchors
+            
+            printfn "list is doing soemthing %d" newMiddleAnchors.Length
+                    
+            
             let move =
                 match word with
                 | [] -> SMChange (handToIDList st.hand)
@@ -125,8 +142,6 @@ module Scrabble =
             
             debugPrint (sprintf "Player %d -> Server:\n%A\n" (State.playerNumber st) move) // keep the debug lines. They are useful.
             
-            
-            // debugPrint (sprintf "Player %d -> Server:\n%A\n" (State.playerNumber st) move) // keep the debug lines. They are useful.
             send cstream move
 
             let msg = recv cstream
@@ -135,18 +150,10 @@ module Scrabble =
             printfn "%s" x 
             printfn "skrrrrrrt response message ends here" 
             
-            //debugPrint (sprintf "Player %d <- Server:\n%A\n" (State.playerNumber st) move) // keep the debug lines. They are useful.
-            
-            (*
-                i have made a method "getNewANchorPoints" that retunrs the coordinate of the last letter formerly played
-                we need to update the state here since we dont player multiplayer
-            *)
-            
-            
             match msg with
             | RCM (CMChangeSuccess(newTiles)) ->
                 let handSet = List.fold (fun acc (x, k) -> MultiSet.add x k acc) MultiSet.empty newTiles
-                let st' = State.mkState st.board st.dict st.playerNumber handSet st.boardState st.squaresUsed st.pieces st.anchorPoint st.nextWordIsHorizontal false
+                let st' = State.mkState st.board st.dict st.playerNumber handSet st.boardState st.squaresUsed st.pieces st.anchorPoint st.nextWordIsHorizontal false newMiddleAnchors
                 aux st'
             | RCM (CMPlaySuccess(ms, points, newPieces)) ->
                 
@@ -170,7 +177,7 @@ module Scrabble =
                    // | (x,y) when x = fst st.anchorPoint && y = snd st.anchorPoint -> ((x,y): coord), false
                 printfn "started matching CMPLAYSUCCES msg4"
 
-                let st' = State.mkState st.board st.dict st.playerNumber addedToHand newBoardState newSquaresUsed st.pieces newAnchorPoint (snd lastTile) false // This state needs to be updated mkstate -> newLastTile
+                let st' = State.mkState st.board st.dict st.playerNumber addedToHand newBoardState newSquaresUsed st.pieces newAnchorPoint (snd lastTile) false newMiddleAnchors // This state needs to be updated mkstate -> newLastTile
                 
                 printfn "started matching CMPLAYSUCCES msg5"
                 aux st'
@@ -184,10 +191,11 @@ module Scrabble =
                 (* Failed play. Update your state *)
                 printfn "received CMPLAYFAILED MSG"
                 let newBoardState = List.fold(fun acc (coord,(_, (x,y))) -> Map.add coord (x,y) acc ) st.boardState ms
-                let st' = State.mkState st.board st.dict st.playerNumber st.hand newBoardState st.squaresUsed st.pieces st.anchorPoint st.nextWordIsHorizontal false 
+                let st' = State.mkState st.board st.dict st.playerNumber st.hand newBoardState st.squaresUsed st.pieces st.anchorPoint st.nextWordIsHorizontal false newMiddleAnchors  
                 aux st'
             | RCM (CMGameOver _) -> ()
             | RCM a -> failwith (sprintf "not implmented: %A" a)
+            
             | RGPE err -> 
                 printfn "Gameplay Error:\n%A" err; aux st
                 
@@ -223,6 +231,6 @@ module Scrabble =
         let board = mkBoard boardP
         let handSet = List.fold (fun acc (x, k) -> MultiSet.add x k acc) MultiSet.empty hand
     
-        fun () -> playGame cstream tiles (State.mkState board dict playerNumber handSet Map.empty Map.empty tiles ((0,0): coord) true true)
+        fun () -> playGame cstream tiles (State.mkState board dict playerNumber handSet Map.empty Map.empty tiles ((0,0): coord) true true [])
         
         
