@@ -77,7 +77,7 @@ module Scrabble =
         
     let removeHand (st: State.state) = List.fold (fun acc elem -> MultiSet.removeSingle elem acc) st.hand (MultiSet.toList st.hand)   
     
-    let tryBuildWord (pieces: Map<uint32,tile>) (st : State.state) =
+    let tryBuildWord (pieces: Map<uint32,tile>) (st : State.state) : (coord * (uint32 * (char * int))) list =
         
     //let tryBuildWord (pieces: Map<uint32,tile>) (st : State.state) (anchorPoint: (int * int)) = 
         // let hand = HandToChar st.hand pieces
@@ -104,7 +104,25 @@ module Scrabble =
                 []
             else
                 convertUIntList ((findLongestWord foundWords 8)[0]) pieces st.nextWordIsHorizontal st.anchorPoint st.thisIsTheVeryFirstWord
-
+    
+    let tryBuildWordsOnMiddleAnchors (pieces: Map<uint32,tile>) (st : State.state) (anchor : coord) : (coord * (uint32 * (char * int))) list=
+        
+        let hand = handToIDList st.hand
+        let currentWord : uint32 list = []
+        let words : uint32 list list = []
+        let uintToBeginWith = Map.find anchor st.squaresUsed
+        
+        printfn "%u" uintToBeginWith
+        printfn "%u" uintToBeginWith
+        printfn "%u" uintToBeginWith
+        let foundWords = 
+            WordBuilder.stepChar uintToBeginWith currentWord words hand st.dict 
+        
+        if (findLongestWord foundWords 5).IsEmpty
+            then
+                []
+            else
+                convertUIntList ((findLongestWord foundWords 8)[0]) pieces st.nextWordIsHorizontal st.anchorPoint st.thisIsTheVeryFirstWord
 
         
         
@@ -135,10 +153,39 @@ module Scrabble =
             printfn "list is doing soemthing %d" newMiddleAnchors.Length
                     
             
+            
             let move =
                 match word with
-                | [] -> SMChange (handToIDList st.hand)
-                | _ -> SMPlay word
+                | [] ->
+                    printfn "loooooool"
+                    printfn "loooooool"
+                    printfn "loooooool"
+                    
+                  
+                    let zz = tryBuildWordsOnMiddleAnchors st.pieces st (fst st.middleAnchors[0])
+                    printfn "loooooool2222222"
+                    printTest zz
+                    printfn "loooooool2222223"
+                    
+                    match (List.fold ( fun acc (anc, b) -> tryBuildWordsOnMiddleAnchors st.pieces st anc ) [] st.middleAnchors) with
+                    | [] ->
+                        printfn "Fart city"
+                        printfn "Fart city"
+                        printfn "Fart city"
+                        printfn "Fart city"
+                        printfn "Fart city"
+                        SMForfeit
+                    | _ ->
+                        let newWords = List.fold ( fun acc (anc, b) -> acc @ (tryBuildWordsOnMiddleAnchors st.pieces st anc )) [] st.middleAnchors
+                        printfn "skrrrrrrrt ------"
+                        printfn "skrrrrrrrt ------"
+                        printfn "skrrrrrrrt ------"
+                        printfn "skrrrrrrrt ------"
+                        printfn "skrrrrrrrt ------"
+                        SMPlay zz
+                    
+                | _ ->
+                    SMPlay word
             
             debugPrint (sprintf "Player %d -> Server:\n%A\n" (State.playerNumber st) move) // keep the debug lines. They are useful.
             
@@ -156,30 +203,23 @@ module Scrabble =
                 let st' = State.mkState st.board st.dict st.playerNumber handSet st.boardState st.squaresUsed st.pieces st.anchorPoint st.nextWordIsHorizontal false newMiddleAnchors
                 aux st'
             | RCM (CMPlaySuccess(ms, points, newPieces)) ->
-                
-                printfn "started matching CMPLAYSUCCES msg0"
+
                 let removeFromHand = List.fold (fun acc elem -> MultiSet.removeSingle (fst(snd elem)) acc) st.hand ms
                 let addedToHand = List.fold (fun acc elem -> MultiSet.add (fst elem) (snd elem) acc) removeFromHand newPieces
-                
-                printfn "started matching CMPLAYSUCCES msg1"
+
                 let newBoardState = List.fold(fun acc (coord,(_, (x,y))) -> Map.add coord (x,y) acc ) st.boardState ms //Map.add (0,0) ('a',0)  st.boardState
                 let newSquaresUsed = List.fold (fun acc (coord,(int, _)) -> Map.add coord int acc) st.squaresUsed ms
                 
-                printfn "started matching CMPLAYSUCCES msg2"
                 let newAnchorPoint = getNewAnchorPoint word
-                
-                printfn "started matching CMPLAYSUCCES msg3"
                 
                 let lastTile =
                     match fst (List.last ms) with
                     | (x,y) when x <> fst  st.anchorPoint -> ((x,y): coord), false
                     | (x,y) when y <> snd  st.anchorPoint -> ((x,y): coord), true
                    // | (x,y) when x = fst st.anchorPoint && y = snd st.anchorPoint -> ((x,y): coord), false
-                printfn "started matching CMPLAYSUCCES msg4"
 
                 let st' = State.mkState st.board st.dict st.playerNumber addedToHand newBoardState newSquaresUsed st.pieces newAnchorPoint (snd lastTile) false newMiddleAnchors // This state needs to be updated mkstate -> newLastTile
                 
-                printfn "started matching CMPLAYSUCCES msg5"
                 aux st'
                 
             | RCM (CMPlayed (pid, ms, points)) ->
@@ -195,7 +235,6 @@ module Scrabble =
                 aux st'
             | RCM (CMGameOver _) -> ()
             | RCM a -> failwith (sprintf "not implmented: %A" a)
-            
             | RGPE err -> 
                 printfn "Gameplay Error:\n%A" err; aux st
                 
