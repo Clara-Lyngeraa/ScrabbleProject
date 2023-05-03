@@ -33,11 +33,12 @@ module State =
         hand          : MultiSet.MultiSet<uint32>
         boardState    : Map<coord, char * int>
         squaresUsed   : Map<coord, uint32>
-        anchorPoint : coord 
+        anchorPoint : coord
+        nextWordIsHorizontal : bool
         thisIsTheVeryFirstWord : bool
     }
 
-    let mkState b d pn h bs used lastTile fw = {
+    let mkState b d pn h bs used lastTile isHoriz fw = {
         board = b; 
         dict = d;  
         playerNumber = pn; 
@@ -45,6 +46,7 @@ module State =
         boardState = bs; 
         squaresUsed = used; 
         anchorPoint = lastTile
+        nextWordIsHorizontal = isHoriz
         thisIsTheVeryFirstWord = fw
     } 
     
@@ -61,10 +63,7 @@ module State =
 
     
 module Scrabble =
-    
-    let setCoordsForVertical (word : (uint32 * (char * int)) list ) (y : int)  =
-        List.fold (fun acc a ->  acc  @ [matchCoord ( (findIndex word a) , y) a ]) List.Empty word
-        
+          
     let firstLetter (st: State.state) =
         match st.boardState.TryFind (st.anchorPoint) with //st.lastTilePlaced
         | Some s -> fst s
@@ -78,7 +77,8 @@ module Scrabble =
         
     let removeHand (st: State.state) = List.fold (fun acc elem -> MultiSet.removeSingle elem acc) st.hand (MultiSet.toList st.hand)   
     
-    let tryBuildWord (pieces: Map<uint32,tile>) (st : State.state) = 
+    let tryBuildWord (pieces: Map<uint32,tile>) (st : State.state) =
+        
     //let tryBuildWord (pieces: Map<uint32,tile>) (st : State.state) (anchorPoint: (int * int)) = 
         let hand = HandToChar st.hand pieces 
         let currentWord : char list = []
@@ -91,18 +91,16 @@ module Scrabble =
                     st.thisIsTheVeryFirstWord = false // This wouldn't work, need mkState
                     WordBuilder.playTheVeryFirstWord currentWord words hand st.dict
                 else
-                    printfn "Now trying to build the second word"
-                    printfn "Now trying to build the second word"
-                    printfn "Now trying to build the second word"
                     printfn "Our Hand: %s" (charListToString hand)
                     let charToBeginWith = fst(Map.find st.anchorPoint st.boardState) //should be able to 
                     WordBuilder.stepChar charToBeginWith currentWord words hand st.dict // Fold over list of anchorpoints instead of D
+        
         
         printfn ""
         printfn "The first in the list of longest words: %s" (charListToString ((findLongestWord foundWords 8)[0]))
         printfn ""
         
-        convertCharList ((findLongestWord foundWords 8)[0]) pieces // Debug line, outcomment
+        convertCharList ((findLongestWord foundWords 8)[0]) pieces st.nextWordIsHorizontal st.anchorPoint st.thisIsTheVeryFirstWord// Debug line, outcomment
         
         //(findLongestWord foundWords 8)[0]
         //smus tester coordinate prints
@@ -150,13 +148,16 @@ module Scrabble =
                 let newBoardState = List.fold(fun acc (coord,(_, (x,y))) -> Map.add coord (x,y) acc ) st.boardState ms //Map.add (0,0) ('a',0)  st.boardState
                 let newSquaresUsed = List.fold (fun acc (coord,(int, _)) -> Map.add coord int acc) st.squaresUsed ms
                 
-                let newAnchorPoint = getNewAnchorPoint wordListToSend
-                printfn " ---Attempt to make an anchorpoint %d ----- %d" (fst newAnchorPoint) (snd newAnchorPoint)
-                printfn " ---Attempt to make an anchorpoint %d ----- %d" (fst newAnchorPoint) (snd newAnchorPoint)
-                printfn " ---Attempt to make an anchorpoint %d ----- %d" (fst newAnchorPoint) (snd newAnchorPoint)
-                    
+                let newAnchorPoint = getNewAnchorPoint wordListToSend 
                 
-                let st' = State.mkState st.board st.dict st.playerNumber addedToHand newBoardState newSquaresUsed newAnchorPoint false // This state needs to be updated mkstate -> newLastTile
+                let lastTile =
+                    match fst (List.last ms) with
+                    | (x,y) when x <> fst  st.anchorPoint -> ((x,y): coord), false
+                    | (x,y) when y <> snd  st.anchorPoint -> ((x,y): coord), true
+                   // | (x,y) when x = fst st.anchorPoint && y = snd st.anchorPoint -> ((x,y): coord), false
+                
+
+                let st' = State.mkState st.board st.dict st.playerNumber addedToHand newBoardState newSquaresUsed newAnchorPoint (snd lastTile) false // This state needs to be updated mkstate -> newLastTile
                 
                 aux st'
             | RCM (CMPlayed (pid, ms, points)) ->
@@ -167,7 +168,7 @@ module Scrabble =
             | RCM (CMPlayFailed (pid, ms)) ->
                 (* Failed play. Update your state *)
                 let newBoardState = List.fold(fun acc (coord,(_, (x,y))) -> Map.add coord (x,y) acc ) st.boardState ms
-                let st' = State.mkState st.board st.dict st.playerNumber st.hand newBoardState st.squaresUsed st.anchorPoint false 
+                let st' = State.mkState st.board st.dict st.playerNumber st.hand newBoardState st.squaresUsed st.anchorPoint st.nextWordIsHorizontal false 
                 aux st'
             | RCM (CMGameOver _) -> ()
             | RCM a -> failwith (sprintf "not implmented: %A" a)
@@ -205,6 +206,6 @@ module Scrabble =
         let board = mkBoard boardP
         let handSet = List.fold (fun acc (x, k) -> MultiSet.add x k acc) MultiSet.empty hand
     
-        fun () -> playGame cstream tiles (State.mkState board dict playerNumber handSet Map.empty Map.empty ((0,0): coord) true)
+        fun () -> playGame cstream tiles (State.mkState board dict playerNumber handSet Map.empty Map.empty ((0,0): coord) true true)
         
         

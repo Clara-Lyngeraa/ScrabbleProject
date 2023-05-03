@@ -139,19 +139,33 @@ module internal AuxMethods
         startCoord, word
     
     let findIndex arr elem = arr |> List.findIndex ((=) elem)
-        
-    let setCoordsForHorizontal (word : (uint32 * (char * int)) list ) (y : int)  =
-        List.fold (fun acc a ->  acc  @ [matchCoord ( (findIndex word a) , y) a ]) List.Empty word
+    
+    let setCoordsForHorizontal (word : (uint32 * (char * int)) list ) (x:int) (y : int)  (isFirstWord : bool)=
+        if isFirstWord
+        then List.fold (fun acc a ->  acc  @ [matchCoord ( ((findIndex word a) + x) , y) a ]) List.Empty word
+        else 
+            let fullWord = List.fold (fun acc a ->  acc  @ [matchCoord ( ((findIndex word a) + x) , y) a ]) List.Empty word
+            fullWord.Tail
+    
+    let setCoordsForVertical (word : (uint32 * (char * int)) list ) (x:int) (y : int)  =
+        let fullWord =  List.fold (fun acc a ->  acc  @ [matchCoord (x , (y + findIndex word a)) a ]) List.Empty word
+        fullWord.Tail
     
     
         
     // (boardState: Map<coord, char * int>) (squaresUsed: Map<coord, uint32>)
-    let convertCharList list  (pieces: Map<uint32,tile>) =
+    let convertCharList list  (pieces: Map<uint32,tile>) (isHorizontal : bool) (coordinate : coord) (isFirstWord : bool)=
         let charToScoreMap = buildCharToScoreValueMap pieces
         let temp = charListToUInt_Char_Int list charToScoreMap
         
-        printTest (setCoordsForHorizontal temp 0)  
-        setCoordsForHorizontal temp 0 
+        if isHorizontal
+        then
+            printTest (setCoordsForHorizontal temp (fst coordinate) (snd coordinate) isFirstWord)  
+            setCoordsForHorizontal temp (fst coordinate) (snd coordinate) isFirstWord
+        else
+            printTest (setCoordsForVertical temp (fst coordinate) (snd coordinate))  
+            setCoordsForVertical temp (fst coordinate) (snd coordinate)
+        
         
     let getNewAnchorPoint (list : ((int*int) * (uint32 * (char * int))) list ) =
         match List.tryLast list with
