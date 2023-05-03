@@ -32,20 +32,23 @@ module State =
         playerNumber  : uint32
         hand          : MultiSet.MultiSet<uint32>
         boardState    : Map<coord, char * int>
+        pieces        : Map<uint32, tile>
         squaresUsed   : Map<coord, uint32>
+        
         anchorPoint : coord
         nextWordIsHorizontal : bool
         thisIsTheVeryFirstWord : bool
     }
 
-    let mkState b d pn h bs used lastTile isHoriz fw = {
+    let mkState b d pn h bs used pieces anchorPoint isHoriz fw = {
         board = b; 
         dict = d;  
         playerNumber = pn; 
         hand = h; 
         boardState = bs; 
-        squaresUsed = used; 
-        anchorPoint = lastTile
+        squaresUsed = used
+        pieces = pieces
+        anchorPoint = anchorPoint
         nextWordIsHorizontal = isHoriz
         thisIsTheVeryFirstWord = fw
     } 
@@ -76,6 +79,7 @@ module Scrabble =
         
     //let tryBuildWord (pieces: Map<uint32,tile>) (st : State.state) (anchorPoint: (int * int)) = 
         // let hand = HandToChar st.hand pieces
+
         let hand = handToIDList st.hand
         let currentWord : uint32 list = []
         let words : uint32 list list = []
@@ -155,7 +159,7 @@ module Scrabble =
                    // | (x,y) when x = fst st.anchorPoint && y = snd st.anchorPoint -> ((x,y): coord), false
                 
 
-                let st' = State.mkState st.board st.dict st.playerNumber addedToHand newBoardState newSquaresUsed newAnchorPoint (snd lastTile) false // This state needs to be updated mkstate -> newLastTile
+                let st' = State.mkState st.board st.dict st.playerNumber addedToHand newBoardState newSquaresUsed st.pieces newAnchorPoint (snd lastTile) false // This state needs to be updated mkstate -> newLastTile
                 
                 aux st'
             | RCM (CMPlayed (pid, ms, points)) ->
@@ -166,7 +170,7 @@ module Scrabble =
             | RCM (CMPlayFailed (pid, ms)) ->
                 (* Failed play. Update your state *)
                 let newBoardState = List.fold(fun acc (coord,(_, (x,y))) -> Map.add coord (x,y) acc ) st.boardState ms
-                let st' = State.mkState st.board st.dict st.playerNumber st.hand newBoardState st.squaresUsed st.anchorPoint st.nextWordIsHorizontal false 
+                let st' = State.mkState st.board st.dict st.playerNumber st.hand newBoardState st.squaresUsed st.pieces st.anchorPoint st.nextWordIsHorizontal false 
                 aux st'
             | RCM (CMGameOver _) -> ()
             | RCM a -> failwith (sprintf "not implmented: %A" a)
@@ -204,6 +208,6 @@ module Scrabble =
         let board = mkBoard boardP
         let handSet = List.fold (fun acc (x, k) -> MultiSet.add x k acc) MultiSet.empty hand
     
-        fun () -> playGame cstream tiles (State.mkState board dict playerNumber handSet Map.empty Map.empty ((0,0): coord) true true)
+        fun () -> playGame cstream tiles (State.mkState board dict playerNumber handSet Map.empty Map.empty tiles ((0,0): coord) true true)
         
         

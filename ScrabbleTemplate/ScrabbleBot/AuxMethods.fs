@@ -205,8 +205,8 @@ module internal AuxMethods
     
     // char -> (uint32 * (char * int)))
    
-    let uintListToUInt_Char_Int list (map: Map<uint32,int>) =
-        List.map (fun u -> (u,((translate u),map[u]))) list
+    let uintListToUInt_Char_Int list (pieces: Map<uint32,tile>) =
+        List.map (fun u -> (u,((translate u), (snd (Set.toList (pieces[u])).[0])) )) list
     
     //just a debug method
     let printTest (temp : ((int*int) * (uint32 * (char * int))) list ) =
@@ -234,8 +234,8 @@ module internal AuxMethods
         
     // (boardState: Map<coord, char * int>) (squaresUsed: Map<coord, uint32>)
     let convertUIntList list  (pieces: Map<uint32,tile>) (isHorizontal : bool) (coordinate : coord) (isFirstWord : bool) =
-        let idToScoreMap = buildIDToScoreValueMap pieces
-        let temp = uintListToUInt_Char_Int list idToScoreMap
+        
+        let temp = uintListToUInt_Char_Int list pieces
         
         if isHorizontal
         then
@@ -254,6 +254,13 @@ module internal AuxMethods
     let printList (list: uint32 list) =
         List.map (fun u -> (printf "%c" (translate u))) list
         printfn ""
+    
+    (*let checkWildcards (hand: uint32 list) =
+        List.map (fun u ->
+            match u with
+            | 0u -> 
+            | _ -> u
+            ) hand *)
     
 
 
