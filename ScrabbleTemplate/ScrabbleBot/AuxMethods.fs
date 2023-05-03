@@ -260,12 +260,14 @@ module internal AuxMethods
         List.map (fun u -> (printf "%c" (translate u))) list
         printfn ""
     
-    (*let checkWildcards (hand: uint32 list) =
-        List.map (fun u ->
-            match u with
-            | 0u -> 
-            | _ -> u
-            ) hand *)
+    let removeXTilesFromHand (hand: MultiSet.MultiSet<uint32>) (amount: uint32) =
+        let handList = toList hand
+        let rec aux amount =
+            match amount with
+            | 0u -> handList
+            | _ -> removeUintHand handList 0u
+        aux amount
+        
     
 
 

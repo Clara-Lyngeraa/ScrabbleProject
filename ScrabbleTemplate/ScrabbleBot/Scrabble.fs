@@ -96,28 +96,13 @@ module Scrabble =
                     let uintToBeginWith = Map.find st.anchorPoint st.squaresUsed 
                     WordBuilder.stepChar uintToBeginWith currentWord words hand st.dict // Fold over list of anchorpoints instead of D
         
-        
-        (*printfn ""
-        printList ((findLongestWord foundWords 8)[0])
-        printfn ""
-        *)
+
         if ((findLongestWord foundWords 8)).IsEmpty
             then
-                printfn "vi skal swapppe tiiiiiiles"
-                printfn "vi skal swapppe tiiiiiiles"
-                printfn "vi skal swapppe tiiiiiiles"
-                printfn "vi skal swapppe tiiiiiiles"
-                printfn "vi skal swapppe tiiiiiiles"
-                printfn "vi skal swapppe tiiiiiiles"
-                convertUIntList ((findLongestWord foundWords 8)[0]) pieces st.nextWordIsHorizontal st.anchorPoint st.thisIsTheVeryFirstWord// Debug line, outcomment
+                []
             else
-                printfn "skrrrrrrt2"
                 convertUIntList ((findLongestWord foundWords 8)[0]) pieces st.nextWordIsHorizontal st.anchorPoint st.thisIsTheVeryFirstWord// Debug line, outcomment
-        
-        //(findLongestWord foundWords 8)[0]
-        //smus tester coordinate prints
-        //smus stopper igen nu skrrrt skrrrt
-        
+
 
         
         
@@ -129,8 +114,13 @@ module Scrabble =
             printfn ""
             Print.printHand pieces (State.hand st)
 
-            let wordListToSend = tryBuildWord pieces st
-            let move = SMPlay wordListToSend
+            let word = tryBuildWord pieces st
+            
+            let move =
+                match word with
+                | [] -> SMChange (handToIDList st.hand)
+                | _ -> SMPlay word
+            
             debugPrint (sprintf "Player %d -> Server:\n%A\n" (State.playerNumber st) move) // keep the debug lines. They are useful.
             
             
@@ -152,6 +142,10 @@ module Scrabble =
             
             
             match msg with
+            | RCM (CMChangeSuccess(newTiles)) ->
+                let handSet = List.fold (fun acc (x, k) -> MultiSet.add x k acc) MultiSet.empty newTiles
+                let st' = State.mkState st.board st.dict st.playerNumber handSet st.boardState st.squaresUsed st.pieces st.anchorPoint st.nextWordIsHorizontal false
+                aux st'
             | RCM (CMPlaySuccess(ms, points, newPieces)) ->
                 
                 printfn "started matching CMPLAYSUCCES msg0"
@@ -163,7 +157,7 @@ module Scrabble =
                 let newSquaresUsed = List.fold (fun acc (coord,(int, _)) -> Map.add coord int acc) st.squaresUsed ms
                 
                 printfn "started matching CMPLAYSUCCES msg2"
-                let newAnchorPoint = getNewAnchorPoint wordListToSend
+                let newAnchorPoint = getNewAnchorPoint word
                 
                 printfn "started matching CMPLAYSUCCES msg3"
                 
@@ -193,7 +187,13 @@ module Scrabble =
             | RCM (CMGameOver _) -> ()
             | RCM a -> failwith (sprintf "not implmented: %A" a)
             | RGPE err -> 
-                printfn "Gameplay Error:\n%A" err; aux st
+                printfn "Gameplay Error:\n%A" err
+                match err[0] with
+                | GPENotEnoughPieces (changeTiles, availableTiles) ->
+                    let tilesToRemove = removeXTilesFromHand st.hand (changeTiles-availableTiles)
+                    SMChange tilesToRemove
+                    aux st
+                    
                 (*
                     Her skal vin håndtere når vores ord fejler
                     burde ikke være et problem vi får eftersom det kun er hvis det ikke er muligt at skrive ord
