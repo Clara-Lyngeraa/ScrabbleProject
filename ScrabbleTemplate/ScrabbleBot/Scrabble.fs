@@ -105,24 +105,24 @@ module Scrabble =
             else
                 convertUIntList ((findLongestWord foundWords 8)[0]) pieces st.nextWordIsHorizontal st.anchorPoint st.thisIsTheVeryFirstWord
     
-    let tryBuildWordsOnMiddleAnchors (pieces: Map<uint32,tile>) (st : State.state) (anchor : coord) : (coord * (uint32 * (char * int))) list=
+    let tryBuildWordsOnMiddleAnchors (pieces: Map<uint32,tile>) (st : State.state) : (coord * (uint32 * (char * int))) list=
         
         let hand = handToIDList st.hand
         let currentWord : uint32 list = []
         let words : uint32 list list = []
-        let uintToBeginWith = Map.find anchor st.squaresUsed
+   
         
-        printfn "%u" uintToBeginWith
-        printfn "%u" uintToBeginWith
-        printfn "%u" uintToBeginWith
-        let foundWords = 
-            WordBuilder.stepChar uintToBeginWith currentWord words hand st.dict 
+        let foundWords =
+            let getAnchor = st.middleAnchors[st.middleAnchors.Length-2]
+            let uintToBeginWith = Map.find (fst getAnchor) st.squaresUsed 
+            WordBuilder.stepChar uintToBeginWith currentWord words hand st.dict
         
         if (findLongestWord foundWords 5).IsEmpty
             then
                 []
             else
                 convertUIntList ((findLongestWord foundWords 8)[0]) pieces st.nextWordIsHorizontal st.anchorPoint st.thisIsTheVeryFirstWord
+                
 
         
         
@@ -131,11 +131,11 @@ module Scrabble =
     let playGame cstream pieces (st : State.state) =
         
         let rec aux (st : State.state) =
-            printfn ""
             Print.printHand pieces (State.hand st)
 
             let word = tryBuildWord pieces st
             
+            //CLARA FIIIIXXX DET HERRRR
             let newMiddleAnchors =
                 if word.Length > 3
                 then
@@ -150,42 +150,17 @@ module Scrabble =
                 else
                     st.middleAnchors
             
-            printfn "list is doing soemthing %d" newMiddleAnchors.Length
-                    
-            
-            
             let move =
                 match word with
                 | [] ->
-                    printfn "loooooool"
-                    printfn "loooooool"
-                    printfn "loooooool"
-                    
-                  
-                    let zz = tryBuildWordsOnMiddleAnchors st.pieces st (fst st.middleAnchors[0])
-                    printfn "loooooool2222222"
-                    printTest zz
-                    printfn "loooooool2222223"
-                    
-                    match (List.fold ( fun acc (anc, b) -> tryBuildWordsOnMiddleAnchors st.pieces st anc ) [] st.middleAnchors) with
-                    | [] ->
-                        printfn "Fart city"
-                        printfn "Fart city"
-                        printfn "Fart city"
-                        printfn "Fart city"
-                        printfn "Fart city"
-                        SMForfeit
-                    | _ ->
-                        let newWords = List.fold ( fun acc (anc, b) -> acc @ (tryBuildWordsOnMiddleAnchors st.pieces st anc )) [] st.middleAnchors
-                        printfn "skrrrrrrrt ------"
-                        printfn "skrrrrrrrt ------"
-                        printfn "skrrrrrrrt ------"
-                        printfn "skrrrrrrrt ------"
-                        printfn "skrrrrrrrt ------"
-                        SMPlay zz
-                    
-                | _ ->
-                    SMPlay word
+                    let newWord = tryBuildWordsOnMiddleAnchors pieces st
+                    if newWord.IsEmpty
+                    then SMPass
+                    else
+                        printfn "New word starts with %c size %d"  (fst (snd (snd newWord[0]))) newWord.Length
+                        SMPlay newWord
+ 
+                | _ -> SMPlay word
             
             debugPrint (sprintf "Player %d -> Server:\n%A\n" (State.playerNumber st) move) // keep the debug lines. They are useful.
             
@@ -193,15 +168,9 @@ module Scrabble =
 
             let msg = recv cstream
             let x = msg.ToString()
-            printfn "starts here"  
-            printfn "%s" x 
-            printfn "skrrrrrrt response message ends here" 
+
             
             match msg with
-            | RCM (CMChangeSuccess(newTiles)) ->
-                let handSet = List.fold (fun acc (x, k) -> MultiSet.add x k acc) MultiSet.empty newTiles
-                let st' = State.mkState st.board st.dict st.playerNumber handSet st.boardState st.squaresUsed st.pieces st.anchorPoint st.nextWordIsHorizontal false newMiddleAnchors
-                aux st'
             | RCM (CMPlaySuccess(ms, points, newPieces)) ->
 
                 let removeFromHand = List.fold (fun acc elem -> MultiSet.removeSingle (fst(snd elem)) acc) st.hand ms
@@ -229,13 +198,20 @@ module Scrabble =
                 aux st'
             | RCM (CMPlayFailed (pid, ms)) ->
                 (* Failed play. Update your state *)
-                printfn "received CMPLAYFAILED MSG"
+           
                 let newBoardState = List.fold(fun acc (coord,(_, (x,y))) -> Map.add coord (x,y) acc ) st.boardState ms
                 let st' = State.mkState st.board st.dict st.playerNumber st.hand newBoardState st.squaresUsed st.pieces st.anchorPoint st.nextWordIsHorizontal false newMiddleAnchors  
                 aux st'
+            | RCM (CMChangeSuccess(newTiles)) ->
+               let handSet = List.fold (fun acc (x, k) -> MultiSet.add x k acc) MultiSet.empty newTiles
+               let st' = State.mkState st.board st.dict st.playerNumber handSet st.boardState st.squaresUsed st.pieces st.anchorPoint st.nextWordIsHorizontal false newMiddleAnchors
+               aux st'
+            | RCM (CMPassed _) ->
+               let st' = State.mkState st.board st.dict st.playerNumber st.hand st.boardState st.squaresUsed st.pieces st.anchorPoint st.nextWordIsHorizontal false newMiddleAnchors
+               aux st'
             | RCM (CMGameOver _) -> ()
             | RCM a -> failwith (sprintf "not implmented: %A" a)
-            | RGPE err -> 
+            | RGPE err ->
                 printfn "Gameplay Error:\n%A" err; aux st
                 
                 (*
