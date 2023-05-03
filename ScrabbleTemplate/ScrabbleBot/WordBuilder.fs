@@ -1,5 +1,6 @@
 module internal WordBuilder
 
+    open System.Threading
     open ScrabbleUtil
     open Dictionary
     open AuxMethods
