@@ -128,21 +128,38 @@ module internal AuxMethods
    
     let charListToUInt_Char_Int list (map: Map<char,int>) =
         List.map (fun c -> (charToIDMap[c],(c,map[c]))) list
-        
-    let charListToTile list =
-        List.map (fun x -> charToIDMap[x]) list
     
+    //just a debug method
+    let printTest (temp : ((int*int) * (uint32 * (char * int))) list ) =
+        printfn ""
+        List.iter (fun ((i1:int, i2:int), (u:uint32, (c:char, i3:int))) ->
+            printfn "(%d,%d),(%d, (%c, %d))" i1 i2 u c i3) temp
+    
+    let matchCoord (startCoord : int * int) (word : uint32 * (char * int)) =
+        startCoord, word
+    
+    let findIndex arr elem = arr |> List.findIndex ((=) elem)
+        
+    let setCoordsForHorizontal (word : (uint32 * (char * int)) list ) (y : int)  =
+        List.fold (fun acc a ->  acc  @ [matchCoord ( (findIndex word a) , y) a ]) List.Empty word
+    
+    
+        
     // (boardState: Map<coord, char * int>) (squaresUsed: Map<coord, uint32>)
     let convertCharList list  (pieces: Map<uint32,tile>) =
         let charToScoreMap = buildCharToScoreValueMap pieces
         let temp = charListToUInt_Char_Int list charToScoreMap
         
-        printfn "The following is the word in the format (uint32*(char*int)), one char pr. line:"
-        for uint32,(char,int) in temp
-            do
-                printfn "(%d,(%c,%d)" uint32 char int
+        printTest (setCoordsForHorizontal temp 0)  
+        setCoordsForHorizontal temp 0 
         
+    let getNewAnchorPoint (list : ((int*int) * (uint32 * (char * int))) list ) =
+        match List.tryLast list with
+        | Some s -> fst(s)
+        | None -> (-1,-1)
         
-    
 
-   
+
+
+
+            

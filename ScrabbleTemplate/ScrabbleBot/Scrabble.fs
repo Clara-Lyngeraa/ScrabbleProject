@@ -13,26 +13,6 @@ open ScrabbleUtil.DebugPrint
 
 // The RegEx module is only used to parse human input. It is not used for the final product.
 
-module RegEx =
-    open System.Text.RegularExpressions
-
-    let (|Regex|_|) pattern input =
-        let m = Regex.Match(input, pattern)
-        if m.Success then Some(List.tail [ for g in m.Groups -> g.Value ])
-        else None
-
-    let parseMove ts =
-        let pattern = @"([-]?[0-9]+[ ])([-]?[0-9]+[ ])([0-9]+)([A-Z]{1})([0-9]+)[ ]?" 
-        Regex.Matches(ts, pattern) |>
-        Seq.cast<Match> |> 
-        Seq.map 
-            (fun t -> 
-                match t.Value with
-                | Regex pattern [x; y; id; c; p] ->
-                    ((x |> int, y |> int), (id |> uint32, (c |> char, p |> int)))
-                | _ -> failwith "Failed (should never happen)") |>
-        Seq.toList
-
  module Print =
 
     let printHand pieces hand =
@@ -53,7 +33,7 @@ module State =
         hand          : MultiSet.MultiSet<uint32>
         boardState    : Map<coord, char * int>
         squaresUsed   : Map<coord, uint32>
-        lastTilePlaced : coord
+        anchorPoint : coord
         thisIsTheVeryFirstWord : bool
     }
 
@@ -64,7 +44,7 @@ module State =
         hand = h; 
         boardState = bs; 
         squaresUsed = used; 
-        lastTilePlaced = lastTile
+        anchorPoint = lastTile
         thisIsTheVeryFirstWord = fw
     } 
     
@@ -81,14 +61,17 @@ module State =
 
     
 module Scrabble =
-
+    
+    let setCoordsForVertical (word : (uint32 * (char * int)) list ) (y : int)  =
+        List.fold (fun acc a ->  acc  @ [matchCoord ( (findIndex word a) , y) a ]) List.Empty word
+        
     let firstLetter (st: State.state) =
-        match st.boardState.TryFind (st.lastTilePlaced) with //st.lastTilePlaced
+        match st.boardState.TryFind (st.anchorPoint) with //st.lastTilePlaced
        | Some s -> fst s
        | None -> ' '
     
     let isHorizontal (st: State.state) =
-        let anchor = st.lastTilePlaced
+        let anchor = st.anchorPoint
         match (st.boardState.TryFind ((fst anchor)-1, snd anchor)) with
         | Some s ->  true
         | None ->  false
@@ -96,6 +79,7 @@ module Scrabble =
     let removeHand (st: State.state) = List.fold (fun acc elem -> MultiSet.removeSingle elem acc) st.hand (MultiSet.toList st.hand)   
     
     let tryBuildWord (pieces: Map<uint32,tile>) (st : State.state) = 
+    //let tryBuildWord (pieces: Map<uint32,tile>) (st : State.state) (anchorPoint: (int * int)) = 
         let hand = HandToChar st.hand pieces 
         let currentWord : char list = []
         let words : char list list = []
@@ -107,8 +91,12 @@ module Scrabble =
                     st.thisIsTheVeryFirstWord = false // This wouldn't work, need mkState
                     WordBuilder.playTheVeryFirstWord currentWord words hand st.dict
                 else
+                    printfn "Now trying to build the second word"
+                    printfn "Now trying to build the second word"
+                    printfn "Now trying to build the second word"
                     printfn "Our Hand: %s" (charListToString hand)
-                    WordBuilder.stepChar 'D' currentWord words hand st.dict // Fold over list of anchorpoints instead of D
+                    let charToBeginWith = fst(Map.find st.anchorPoint st.boardState) //should be able to 
+                    WordBuilder.stepChar charToBeginWith currentWord words hand st.dict // Fold over list of anchorpoints instead of D
         
         printfn ""
         printfn "The first in the list of longest words: %s" (charListToString ((findLongestWord foundWords 8)[0]))
@@ -116,7 +104,13 @@ module Scrabble =
         
         convertCharList ((findLongestWord foundWords 8)[0]) pieces // Debug line, outcomment
         
-        (findLongestWord foundWords 8)[0]
+        //(findLongestWord foundWords 8)[0]
+        //smus tester coordinate prints
+        //smus stopper igen nu skrrrt skrrrt
+        
+
+        
+        
     
     
     let playGame cstream pieces (st : State.state) =
@@ -125,15 +119,8 @@ module Scrabble =
             printfn ""
             Print.printHand pieces (State.hand st)
 
-            // remove the force print when you move on from manual input (or when you have learnt the format)
-            // forcePrint "Input move (format '(<x-coordinate> <y-coordinate> <piece id><character><point-value> )*', note the absence of space between the last inputs)\n\n"
-            // let input =  System.Console.ReadLine()
-
-            let x = tryBuildWord pieces st
-
-            let move = SMForfeit
-                
-            Print.printHand pieces (State.hand st)
+            let wordListToSend = tryBuildWord pieces st
+            let move = SMPlay wordListToSend
             debugPrint (sprintf "Player %d -> Server:\n%A\n" (State.playerNumber st) move) // keep the debug lines. They are useful.
             
             
@@ -141,22 +128,35 @@ module Scrabble =
             send cstream move
 
             let msg = recv cstream
+            let x = msg.ToString()
+            printfn "starts here"  
+            printfn "%s" x 
+            printfn "skrrrrrrt response message ends here" 
+            
             debugPrint (sprintf "Player %d <- Server:\n%A\n" (State.playerNumber st) move) // keep the debug lines. They are useful.
+            
+            (*
+                i have made a method "getNewANchorPoints" that retunrs the coordinate of the last letter formerly played
+                we need to update the state here since we dont player multiplayer
+            *)
+            
             
             match msg with
             | RCM (CMPlaySuccess(ms, points, newPieces)) ->
+
                 let removeFromHand = List.fold (fun acc elem -> MultiSet.removeSingle (fst(snd (elem))) acc) st.hand ms
                 let addedToHand = List.fold (fun acc elem -> MultiSet.add (fst elem) (snd elem) acc) removeFromHand newPieces
-        
+                    
                 let newBoardState = List.fold(fun acc (coord,(_, (x,y))) -> Map.add coord (x,y) acc ) st.boardState ms //Map.add (0,0) ('a',0)  st.boardState
                 let newSquaresUsed = List.fold (fun acc (coord,(int, _)) -> Map.add coord int acc) st.squaresUsed ms
-               
-                let lastTile =
-                    match fst (List.last ms) with
-                    | (x,y) when x <> fst  st.lastTilePlaced -> ((x,y): coord), isHorizontal st = true
-                    | (x,y) when y <> snd  st.lastTilePlaced -> ((x,y): coord), isHorizontal st = false
-
-                let st' = State.mkState st.board st.dict st.playerNumber addedToHand newBoardState newSquaresUsed (fst lastTile) false // This state needs to be updated mkstate -> newLastTile
+                
+                let newAnchorPoint = getNewAnchorPoint wordListToSend
+                printfn " ---Attempt to make an anchorpoint %d ----- %d" (fst newAnchorPoint) (snd newAnchorPoint)
+                printfn " ---Attempt to make an anchorpoint %d ----- %d" (fst newAnchorPoint) (snd newAnchorPoint)
+                printfn " ---Attempt to make an anchorpoint %d ----- %d" (fst newAnchorPoint) (snd newAnchorPoint)
+                    
+                
+                let st' = State.mkState st.board st.dict st.playerNumber addedToHand newBoardState newSquaresUsed newAnchorPoint false // This state needs to be updated mkstate -> newLastTile
                 
                 aux st'
             | RCM (CMPlayed (pid, ms, points)) ->
@@ -167,11 +167,17 @@ module Scrabble =
             | RCM (CMPlayFailed (pid, ms)) ->
                 (* Failed play. Update your state *)
                 let newBoardState = List.fold(fun acc (coord,(_, (x,y))) -> Map.add coord (x,y) acc ) st.boardState ms
-                let st' = State.mkState st.board st.dict st.playerNumber st.hand newBoardState st.squaresUsed st.lastTilePlaced false 
+                let st' = State.mkState st.board st.dict st.playerNumber st.hand newBoardState st.squaresUsed st.anchorPoint false 
                 aux st'
             | RCM (CMGameOver _) -> ()
             | RCM a -> failwith (sprintf "not implmented: %A" a)
-            | RGPE err -> printfn "Gameplay Error:\n%A" err; aux st
+            | RGPE err ->
+                printfn "Gameplay Error:\n%A" err; aux st
+                (*
+                    Her skal vin håndtere når vores ord fejler
+                    burde ikke være et problem vi får eftersom det kun er hvis det ikke er muligt at skrive ord
+                *)
+            
 
 
         aux st
