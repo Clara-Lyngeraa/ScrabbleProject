@@ -33,7 +33,7 @@ module State =
         hand          : MultiSet.MultiSet<uint32>
         boardState    : Map<coord, char * int>
         squaresUsed   : Map<coord, uint32>
-        anchorPoint : coord
+        anchorPoint : coord 
         thisIsTheVeryFirstWord : bool
     }
 
@@ -67,8 +67,8 @@ module Scrabble =
         
     let firstLetter (st: State.state) =
         match st.boardState.TryFind (st.anchorPoint) with //st.lastTilePlaced
-       | Some s -> fst s
-       | None -> ' '
+        | Some s -> fst s
+        | None -> ' '
     
     let isHorizontal (st: State.state) =
         let anchor = st.anchorPoint
