@@ -19,3 +19,8 @@ We have run the program over ten times and we end in these scenarios:
 2. We are out of anchor points and have less than 5 tiles left, so we pass 3 times
 3. We have less than 7 tiles left, but we cannot build a word because the letters are hard to place consonants, so we pass 3 times
   
+  
+Multi-player and dictionary: no
+playing on all boards: no
+parallelism: no
+Respect the timeout flag: no
