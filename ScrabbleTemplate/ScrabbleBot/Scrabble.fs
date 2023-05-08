@@ -111,7 +111,7 @@ module Scrabble =
     let tryBuildWord (pieces: Map<uint32,tile>) (st : State.state) : (coord * (uint32 * (char * int))) list =    
     
         let anchorPoints = findAnchorPoints st.squaresUsed
-        printfn "ANCHORPOINTS: \n%A" anchorPoints
+        debugPrint (sprintf "ANCHORPOINTS: \n%A" anchorPoints)
         let hand = handToIDList st.hand
         let currentWord : uint32 list = []
         let words : uint32 list list = []
