@@ -50,17 +50,13 @@ module State =
         thisIsTheVeryFirstWord = fw
         tilesLeft = tiles
     } 
-    
 
     let board st         = st.board
     let dict st          = st.dict
     let playerNumber st  = st.playerNumber
     let hand st          = st.hand
-    
 
-    
 module Scrabble =
-
     let isHorizontal (st: State.state) (anchor) =
         match
             st.boardState.TryFind ((fst anchor)-1, snd anchor),
