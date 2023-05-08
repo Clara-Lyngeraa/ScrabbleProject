@@ -3,11 +3,18 @@
 
 ----
 # Running the program
-From root, type in *make* in the terminal.
+OBS: When run on mac, MacOS identifies the program as malware. This means it has to be explicity allowed to work. Like this:
+1. Run the command as specified below. MacOS will prompt you about the security. Hit OK.
+2. Go to System Settins -> Privacy & Security -> Scroll to Security, and hit the "Allow Anyway button"
+3. Type in you password.
+4. Run the command again. MacOS will prompt you again, but this time hit "Open"
 
-Alternatively, type in *dotnet run --project ScrabbleTemplate/ScrabbleTemplate*
+From the root folder, either:
+- Type in *make* in the terminal.
+- or Type in *dotnet run --project ScrabbleTemplate/ScrabbleTemplate*
 
 The program cannot be executed directly through Rider, it has to be run via the terminal.
+
 
 # Background
 We are trying to get 2 points.
@@ -22,7 +29,7 @@ We have run the program over ten times and we end in these scenarios:
 3. We have less than 7 tiles left, but we cannot build a word because the letters are hard to place consonants, so we pass 3 times
   
   
-Multi-player and dictionary: no
-playing on all boards: no
-parallelism: no
-Respect the timeout flag: no
+- Multi-player and dictionary: no
+- playing on all boards: no
+- parallelism: no
+- Respect the timeout flag: no
