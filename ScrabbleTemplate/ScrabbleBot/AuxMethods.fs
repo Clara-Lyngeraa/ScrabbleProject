@@ -205,6 +205,14 @@ module internal AuxMethods
                 else
                     findLongestWord list (x-1)
     
+    let rec findLongestWord2 wordlist =
+        List.fold (fun acc ele ->
+            let longestMoveAtAnchor = List.maxBy (fun l -> List.length l) (snd ele)
+            if List.length longestMoveAtAnchor > List.length (snd acc)
+                then (fst ele, longestMoveAtAnchor)
+            else acc
+            ) ((0,0), List.empty) wordlist 
+    
     // Desired format:
     // char list -> (coord * (uint32 * (char * int))) list
     
