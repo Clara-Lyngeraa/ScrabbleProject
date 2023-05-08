@@ -69,7 +69,6 @@ module State =
 module Scrabble =
 
     let isHorizontal (st: State.state) (anchor) =
-        
         match
             st.boardState.TryFind ((fst anchor)-1, snd anchor),
             st.boardState.TryFind ((fst anchor)+1, snd anchor)
@@ -108,9 +107,9 @@ module Scrabble =
         
     let findAnchorPoints (squaresUsed: Map<coord, uint32>) =
         Seq.fold (fun acc ele ->
-                                if isValidGoingDownAnchorPoint ele squaresUsed 10 true
+                                if isValidGoingDownAnchorPoint ele squaresUsed 6 true
                                 then (ele, false)::acc
-                                elif isValidGoingRightAnchorPoint ele squaresUsed 10 true
+                                elif isValidGoingRightAnchorPoint ele squaresUsed 6 true
                                 then (ele, true)::acc
                                 else acc
                             ) (List.Empty: List<coord * bool>) squaresUsed.Keys
@@ -129,7 +128,6 @@ module Scrabble =
         let foundWords = 
             if st.thisIsTheVeryFirstWord
                 then
-                    st.thisIsTheVeryFirstWord = false // This wouldn't work, need mkState
                     [((0,0),WordBuilder.playTheVeryFirstWord currentWord words hand st.dict)]
                 else
                     let possibleMoves = List.fold (fun acc ele ->
@@ -163,7 +161,7 @@ module Scrabble =
         //     else
         //         convertUIntList ((findLongestWord foundWords 8)[0]) pieces st.nextWordIsHorizontal st.anchorPoint st.thisIsTheVeryFirstWord
     
-    let tryBuildWordsOnMiddleAnchors (pieces: Map<uint32,tile>) (st : State.state) (anchor: coord) : (coord * (uint32 * (char * int))) list =
+    (*let tryBuildWordsOnMiddleAnchors (pieces: Map<uint32,tile>) (st : State.state) (anchor: coord) : (coord * (uint32 * (char * int))) list =
         
         let hand = handToIDList st.hand
         let currentWord : uint32 list = []
@@ -179,7 +177,7 @@ module Scrabble =
             then
                 []
             else
-                convertUIntList ((findLongestWord foundWords 8)[0]) pieces st.nextWordIsHorizontal st.anchorPoint st.thisIsTheVeryFirstWord
+                convertUIntList ((findLongestWord foundWords 8)[0]) pieces st.nextWordIsHorizontal st.anchorPoint st.thisIsTheVeryFirstWord*)
                 
 
         
@@ -190,8 +188,8 @@ module Scrabble =
             Print.printHand pieces (State.hand st)
             
             let word = tryBuildWord pieces st
-            printfn "TRYING TO PLAY:\n %A" word
             let move =
+               
                 match word with
                 | [] ->
                         if st.tilesLeft = 0 then
@@ -202,6 +200,7 @@ module Scrabble =
                             let oldTiles = (handLst |> (Seq.take (int tilesToChange)) |> Seq.toList)
                             SMChange oldTiles
                 | _ -> SMPlay word
+               
             
             debugPrint (sprintf "Player %d -> Server:\n%A\n" (State.playerNumber st) move) // keep the debug lines. They are useful.
             send cstream move
@@ -268,12 +267,18 @@ module Scrabble =
             | RCM (CMPassed _) ->
                let st' = State.mkState st.board st.dict st.playerNumber st.hand st.boardState st.squaresUsed st.pieces st.anchorPoint st.nextWordIsHorizontal false st.middleAnchors st.tilesLeft
                aux st'
-            | RCM (CMGameOver _) -> printfn "GAME OVER"
+            | RCM (CMGameOver _) -> ()
             | RCM a -> failwith (sprintf "not implmented: %A" a)
             | RGPE err ->
                 printfn "Gameplay Error:\n%A" err
-                printfn "State = %i" st.tilesLeft
-                aux st
+                let tilesLEft = List.fold (fun acc elem ->
+                                    match elem with
+                                    | GPENotEnoughPieces (_,lft) -> (int lft)
+                                    | _ -> acc
+                                    ) st.tilesLeft err
+                let st' = State.mkState st.board st.dict st.playerNumber st.hand st.boardState st.squaresUsed st.pieces st.anchorPoint st.nextWordIsHorizontal st.thisIsTheVeryFirstWord st.middleAnchors tilesLEft
+
+                aux st'
                 (*
                     Her skal vin håndtere når vores ord fejler
                     burde ikke være et problem vi får eftersom det kun er hvis det ikke er muligt at skrive ord
