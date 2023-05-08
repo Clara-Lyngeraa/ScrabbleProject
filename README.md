@@ -7,6 +7,8 @@ From root, type in *make* in the terminal.
 
 Alternatively, type in *dotnet run --project ScrabbleTemplate/ScrabbleTemplate*
 
+The program cannot be executed directly through Rider, it has to be run via the terminal.
+
 # Background
 We are trying to get 2 points.
 We have a list of anchor points – they are printed in the terminal. 

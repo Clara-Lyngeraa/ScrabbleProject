@@ -12,7 +12,6 @@ open AuxMethods
 
 open ScrabbleUtil.DebugPrint
 
-// The RegEx module is only used to parse human input. It is not used for the final product.
 
  module Print =
 
@@ -107,7 +106,7 @@ module Scrabble =
     let tryBuildWord (pieces: Map<uint32,tile>) (st : State.state) : (coord * (uint32 * (char * int))) list =    
     
         let anchorPoints = findAnchorPoints st.squaresUsed
-        debugPrint (sprintf "ANCHORPOINTS: \n%A" anchorPoints)
+        printfn "ANCHORPOINTS: \n%A" anchorPoints
         let hand = handToIDList st.hand
         let currentWord : uint32 list = []
         let words : uint32 list list = []
@@ -133,7 +132,8 @@ module Scrabble =
             then []
         else
             let word = convertUIntList (snd bestMove) pieces (isHorizontal st (fst bestMove)) (fst bestMove) st.thisIsTheVeryFirstWord
-            Thread.Sleep 500 //Slows the placement of tiles down
+            let Sleeptime = 300 //Slows down the placement of tiles down, increase to slow down more.
+            Thread.Sleep Sleeptime 
             word
 
     let playGame cstream pieces (st : State.state) =

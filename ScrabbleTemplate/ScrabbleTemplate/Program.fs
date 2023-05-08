@@ -45,6 +45,7 @@ let main argv =
     let seed       = None
     let port       = 13001
 
+
     let dictAPI =
         // Uncomment if you have implemented a dictionary. last element None if you have not implemented a GADDAG
         Some (Dictionary.empty, Dictionary.insert, Dictionary.step, None) 
